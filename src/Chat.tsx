@@ -18,31 +18,39 @@ import { useChat } from '@ai-sdk/react'
 import { GlobeIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 
+import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
 import { nanoid } from 'nanoid'
+import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
-import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 
-const models = [
-  {
-    name: 'GPT 4.1',
-    value: 'openai/gpt-4.1',
-  },
-  {
-    name: 'Anthropic Sonnet 4',
-    value: 'anthropic:claude-sonnet-4-0',
-  },
-]
+async function getModels() {
+  const res = await fetch('/api/configure')
+  return (await res.json()) as {
+    models: { id: string; name: string }[]
+  }
+}
 
 const Chat = () => {
   const [input, setInput] = useState('')
-  const [model, setModel] = useState<string>(models[0].value)
+  const [model, setModel] = useState<string>('')
   const [webSearch, setWebSearch] = useState(false)
   const { messages, sendMessage, status, setMessages, regenerate } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const query = useQuery({
+    queryFn: getModels,
+    queryKey: ['models'],
+  })
+
+  useEffect(() => {
+    if (query.data) {
+      setModel(query.data.models[0].id)
+    }
+  }, [query.data])
 
   useLayoutEffect(() => {
     if (conversationId === '/') {
@@ -158,23 +166,25 @@ const Chat = () => {
                 <GlobeIcon size={16} />
                 <span>Search</span>
               </PromptInputButton>
-              <PromptInputModelSelect
-                onValueChange={(value) => {
-                  setModel(value)
-                }}
-                value={model}
-              >
-                <PromptInputModelSelectTrigger>
-                  <PromptInputModelSelectValue />
-                </PromptInputModelSelectTrigger>
-                <PromptInputModelSelectContent>
-                  {models.map((model) => (
-                    <PromptInputModelSelectItem key={model.value} value={model.value}>
-                      {model.name}
-                    </PromptInputModelSelectItem>
-                  ))}
-                </PromptInputModelSelectContent>
-              </PromptInputModelSelect>
+              {query.data && model && (
+                <PromptInputModelSelect
+                  onValueChange={(value) => {
+                    setModel(value)
+                  }}
+                  value={model}
+                >
+                  <PromptInputModelSelectTrigger>
+                    <PromptInputModelSelectValue />
+                  </PromptInputModelSelectTrigger>
+                  <PromptInputModelSelectContent>
+                    {(query.data as { models: { id: string; name: string }[] }).models.map((model) => (
+                      <PromptInputModelSelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </PromptInputModelSelectItem>
+                    ))}
+                  </PromptInputModelSelectContent>
+                </PromptInputModelSelect>
+              )}
             </PromptInputTools>
             <PromptInputSubmit disabled={!input} status={status} />
           </PromptInputToolbar>
