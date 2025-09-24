@@ -1,7 +1,6 @@
 import { Message, MessageContent } from '@/components/ai-elements/message'
 
 import { Actions, Action } from '@/components/ai-elements/actions'
-import { Fragment } from 'react'
 import { Response } from '@/components/ai-elements/response'
 import { CopyIcon, RefreshCcwIcon } from 'lucide-react'
 import type { UIDataTypes, UIMessagePart, UITools, UIMessage } from 'ai'

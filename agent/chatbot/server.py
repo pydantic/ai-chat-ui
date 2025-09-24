@@ -1,8 +1,12 @@
 from __future__ import annotations as _annotations
 
+from pathlib import Path
+
 import fastapi
 import logfire
 from fastapi import Request, Response
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pydantic_ai.vercel_ai_elements.starlette import StarletteChat
 
@@ -53,3 +57,17 @@ async def configure_frontend() -> ConfigureFrontend:
 @app.post("/api/chat")
 async def get_chat(request: Request) -> Response:
     return await starlette_chat.dispatch_request(request, deps=None)
+
+
+react_build = Path(__file__).parent / ".." / ".." / "dist"
+if react_build.exists():
+    print("servering react assets")
+
+    @app.get("/")
+    @app.get("/{id}")
+    async def index() -> HTMLResponse:
+        return HTMLResponse(
+            content=(react_build / "index.html").read_bytes(), status_code=200
+        )
+
+    app.mount("/assets", StaticFiles(directory=react_build / "assets"), name="static")
