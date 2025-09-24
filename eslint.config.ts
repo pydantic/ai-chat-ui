@@ -19,7 +19,7 @@ export default defineConfig(
       globals: globals.node,
     },
   },
-  { ignores: ['dist/**', 'server/**', 'node_modules/**', 'scratch/**'] },
+  { ignores: ['dist/**', 'server/**', 'node_modules/**', 'scratch/**', 'agent/**'] },
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
