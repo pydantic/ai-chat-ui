@@ -10,10 +10,15 @@ import { Children } from 'react'
 export type PromptInputProps = HTMLAttributes<HTMLFormElement>
 
 export const PromptInput = ({ className, ...props }: PromptInputProps) => (
-  <form
-    className={cn('w-full divide-y overflow-hidden rounded-xl border bg-background shadow-sm', className)}
-    {...props}
-  />
+  <div className="bg-background w-full">
+    <form
+      className={cn(
+        'w-full divide-y overflow-hidden rounded-xl border shadow-sm has-focus-visible:ring-3 ring-accent',
+        className,
+      )}
+      {...props}
+    />
+  </div>
 )
 
 export type PromptInputTextareaProps = ComponentProps<typeof Textarea> & {

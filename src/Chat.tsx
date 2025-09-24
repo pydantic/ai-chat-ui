@@ -1,4 +1,5 @@
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ai-elements/conversation'
+import { Loader } from '@/components/ai-elements/loader'
 import {
   PromptInput,
   PromptInputButton,
@@ -12,16 +13,16 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { useChat } from '@ai-sdk/react'
 import { GlobeIcon } from 'lucide-react'
-import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
-import { Loader } from '@/components/ai-elements/loader'
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 
-import { Part } from './Part'
-import { nanoid } from 'nanoid'
 import { useThrottle } from '@uidotdev/usehooks'
+import { nanoid } from 'nanoid'
+import { Part } from './Part'
 import type { ConversationEntry } from './types'
+import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 
 const models = [
   {
@@ -33,37 +34,6 @@ const models = [
     value: 'anthropic:claude-sonnet-4-0',
   },
 ]
-
-function useConversationIdFromUrl(): [string, (id: string) => void] {
-  const [conversationId, setConversationId] = useState(() => {
-    return window.location.pathname
-  })
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const newId = window.location.pathname
-      console.log('popstate event detected', window.location.pathname)
-      setConversationId(newId)
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    // local event to handle same-tab updates
-    window.addEventListener('history-state-changed', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-      window.removeEventListener('history-state-changed', handlePopState)
-    }
-  }, [])
-
-  const setConversationIdAndUrl = (id: string) => {
-    setConversationId(id)
-    const url = new URL(window.location.toString())
-    url.pathname = id || '/'
-    window.history.pushState({}, '', url.toString())
-  }
-
-  return [conversationId, setConversationIdAndUrl]
-}
 
 const Chat = () => {
   const [input, setInput] = useState('')
@@ -167,8 +137,7 @@ const Chat = () => {
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="border-b-background border-b-[2rem] sticky bottom-0">
-        <div className="h-5 bg-gradient-to-b from-transparent to-background"></div>
+      <div className="sticky bottom-0 p-3">
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             ref={textareaRef}

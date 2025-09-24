@@ -4,14 +4,19 @@ import { type MouseEvent, useEffect, useState } from 'react'
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from '@/components/ui/sidebar'
+import { useConversationIdFromUrl } from '@/hooks/useConversationIdFromUrl'
+import { cn } from '@/lib/utils'
 import type { ConversationEntry } from '@/types'
+import { ModeToggle } from './mode-toggle'
 
 function useConversations(): ConversationEntry[] {
   const [conversations, setConversations] = useState<ConversationEntry[]>(() => {
@@ -57,13 +62,23 @@ function doLocalNavigation(e: MouseEvent) {
 
 export function AppSidebar() {
   const conversations = useConversations()
+  const [conversationId] = useConversationIdFromUrl()
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="mt-4 ml-4 flex items-center">
+          <h1 className="text-l font-medium text-balance group-data-[state=collapsed]:invisible truncate whitespace-nowrap">
+            Pydantic AI Chat
+          </h1>
+
+          <SidebarTrigger className="ml-auto mr-2 group-data-[state=collapsed]:-translate-x-3" />
+        </div>
+      </SidebarHeader>
+
       <SidebarContent>
-        <h1 className="mt-4 ml-4 text-l font-medium">Pydantic AI Chat</h1>
         <SidebarGroup>
-          <SidebarMenu>
+          <SidebarMenu className="mb-2">
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Start a new conversation">
                 <a href="/" onClick={doLocalNavigation}>
@@ -74,17 +89,22 @@ export function AppSidebar() {
             </SidebarMenuItem>
           </SidebarMenu>
 
-          <SidebarGroupLabel>Conversations</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {conversations.map((conversation, index) => (
                 <SidebarMenuItem key={index}>
-                  <SidebarMenuButton asChild>
-                    <a href={conversation.id} onClick={doLocalNavigation} className="h-auto flex items-start gap-2">
+                  <SidebarMenuButton asChild tooltip={conversation.firstMessage}>
+                    <a
+                      href={conversation.id}
+                      onClick={doLocalNavigation}
+                      className={cn('h-auto flex items-start gap-2', {
+                        'bg-accent pointer-events-none': conversation.id === conversationId,
+                      })}
+                    >
                       <MessageCircle className="size-3 mt-1" />
                       <span className="flex flex-col items-start">
                         <span className="truncate max-w-[150px]">{conversation.firstMessage}</span>
-                        <span className="text-xs opacity-80">{new Date(conversation.timestamp).toLocaleString()}</span>
+                        <span className="text-xs opacity-30">{new Date(conversation.timestamp).toLocaleString()}</span>
                       </span>
                     </a>
                   </SidebarMenuButton>
@@ -94,6 +114,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <ModeToggle />
+      </SidebarFooter>
     </Sidebar>
   )
 }
