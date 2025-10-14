@@ -15,7 +15,7 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { useChat } from '@ai-sdk/react'
-import { GlobeIcon } from 'lucide-react'
+import { Square, CheckSquare } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
@@ -25,32 +25,46 @@ import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
 
+interface ModelConfig {
+  id: string
+  name: string
+  builtInTools: {
+    name: string
+    id: string
+  }[]
+}
+
+// TODO: if just a single model, don't show model selector, just a label.
+interface RemoteConfig {
+  // hard-code matching icons for popular tools, use default wrench for the unrecognized.
+  // known ones: web_search, code_execution, image_generation, web_fetch
+  models: ModelConfig[]
+}
+
 async function getModels() {
   const res = await fetch('/api/configure')
-  return (await res.json()) as {
-    models: { id: string; name: string }[]
-  }
+  return (await res.json()) as RemoteConfig
 }
 
 const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>('')
-  const [webSearch, setWebSearch] = useState(false)
+  const [enabledActions, setEnabledActions] = useState<string[]>([])
   const { messages, sendMessage, status, setMessages, regenerate } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const query = useQuery({
+  const configQuery = useQuery({
     queryFn: getModels,
     queryKey: ['models'],
   })
 
   useEffect(() => {
-    if (query.data) {
-      setModel(query.data.models[0].id)
+    if (configQuery.data) {
+      setModel(configQuery.data.models[0].id)
     }
-  }, [query.data])
+  }, [configQuery.data])
 
   useLayoutEffect(() => {
     if (conversationId === '/') {
@@ -83,7 +97,8 @@ const Chat = () => {
       sendMessage(
         { text: input },
         {
-          body: { model, webSearch },
+          // body: { model, builtInTools: string[] // the ids of what's enabled. },
+          body: { model, webSearch: true },
         },
       ).catch((error: unknown) => {
         console.error('Error sending message:', error)
@@ -157,16 +172,27 @@ const Chat = () => {
           />
           <PromptInputToolbar>
             <PromptInputTools>
-              <PromptInputButton
-                variant={webSearch ? 'default' : 'ghost'}
-                onClick={() => {
-                  setWebSearch(!webSearch)
-                }}
-              >
-                <GlobeIcon size={16} />
-                <span>Search</span>
-              </PromptInputButton>
-              {query.data && model && (
+              {configQuery.data?.buttons.map((button) => {
+                const isEnabled = enabledActions.includes(button.action)
+                return (
+                  // ['search']
+                  <PromptInputButton
+                    key={button.action}
+                    variant={isEnabled ? 'default' : 'ghost'}
+                    onClick={() => {
+                      setEnabledActions((prev) =>
+                        prev.includes(button.action)
+                          ? prev.filter((action) => action !== button.action)
+                          : [...prev, button.action],
+                      )
+                    }}
+                  >
+                    {isEnabled ? <CheckSquare size={16} /> : <Square size={16} />}
+                    <span>{button.label}</span>
+                  </PromptInputButton>
+                )
+              })}
+              {configQuery.data && model && (
                 <PromptInputModelSelect
                   onValueChange={(value) => {
                     setModel(value)
@@ -177,7 +203,7 @@ const Chat = () => {
                     <PromptInputModelSelectValue />
                   </PromptInputModelSelectTrigger>
                   <PromptInputModelSelectContent>
-                    {(query.data as { models: { id: string; name: string }[] }).models.map((model) => (
+                    {(configQuery.data as { models: { id: string; name: string }[] }).models.map((model) => (
                       <PromptInputModelSelectItem key={model.id} value={model.id}>
                         {model.name}
                       </PromptInputModelSelectItem>

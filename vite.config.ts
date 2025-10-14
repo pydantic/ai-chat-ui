@@ -5,9 +5,9 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 // import { analyzer } from 'vite-bundle-analyzer'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), tsconfigPaths()],
-  base: 'https://cdn.jsdelivr.net/npm/@pydantic/pydantic-ai-chat/dist/',
+  base: command === 'build' ? 'https://cdn.jsdelivr.net/npm/@pydantic/pydantic-ai-chat/dist/' : '',
   build: {
     assetsDir: 'assets',
   },
@@ -19,4 +19,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
