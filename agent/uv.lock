@@ -1372,8 +1372,8 @@ wheels = [
 
 [[package]]
 name = "pydantic-ai-slim"
-version = "1.0.19.dev21+f97d6c8"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_ai_slim&rev=vercel-ai-chat#f97d6c8557b00379862eb733451de93202c991f0" }
+version = "1.0.19.dev26+ab246e8"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_ai_slim&rev=vercel-ai-chat#ab246e847d8c78d17094a72658239c9aaa188175" }
 dependencies = [
     { name = "genai-prices" },
     { name = "griffe" },
@@ -1470,8 +1470,8 @@ wheels = [
 
 [[package]]
 name = "pydantic-graph"
-version = "1.0.19.dev21+f97d6c8"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_graph&rev=vercel-ai-chat#f97d6c8557b00379862eb733451de93202c991f0" }
+version = "1.0.19.dev26+ab246e8"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_graph&rev=vercel-ai-chat#ab246e847d8c78d17094a72658239c9aaa188175" }
 dependencies = [
     { name = "httpx" },
     { name = "logfire-api" },
