@@ -2,6 +2,7 @@ import Chat from './Chat.tsx'
 import { AppSidebar } from './components/app-sidebar.tsx'
 import { ThemeProvider } from './components/theme-provider.tsx'
 import { SidebarProvider } from './components/ui/sidebar.tsx'
+import { Toaster } from './components/ui/sonner.tsx'
 import { cn } from './lib/utils.ts'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -27,6 +28,7 @@ export default function App() {
           </div>
         </SidebarProvider>
       </ThemeProvider>
+      <Toaster richColors />
     </QueryClientProvider>
   )
 }
