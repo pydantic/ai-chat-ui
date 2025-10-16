@@ -124,7 +124,7 @@ export function AppSidebar() {
           <div className="ml-2 flex items-center">
             <h1 className="text-l font-medium text-balance truncate whitespace-nowrap">
               <img src="/logo.svg" className="inline h-4 mr-2 mb-1" />
-              <span className="group-data-[state=collapsed]:invisible">Pydantic AI Web UI</span>
+              <span className="group-data-[state=collapsed]:invisible">Pydantic AI Chat</span>
             </h1>
           </div>
         </SidebarHeader>
