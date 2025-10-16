@@ -47,7 +47,7 @@ export const ModeToggle: FC<{ className?: string }> = ({ className }) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="outline" size="icon" onClick={toggleTheme} className={className}>
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className={className}>
           {getIcon()}
           <span className="sr-only">Toggle theme</span>
         </Button>
