@@ -44,8 +44,8 @@ def options_chat():
 
 AIModelID = Literal[
     'gateway/anthropic:claude-sonnet-4-5',
-    'gateway/openai-responses:gpt-5',
-    'gateway/vertex:gemini-2.5-pro',
+    'gateway/responses:gpt-5',
+    'gateway/gemini:gemini-2.5-pro',
 ]
 BuiltinToolID = Literal['web_search', 'image_generation', 'code_execution']
 
@@ -83,7 +83,7 @@ AI_MODELS: list[AIModel] = [
         ],
     ),
     AIModel(
-        id='gateway/openai-responses:gpt-5',
+        id='gateway/responses:gpt-5',
         name='GPT 5',
         builtin_tools=[
             'web_search',
@@ -92,7 +92,7 @@ AI_MODELS: list[AIModel] = [
         ],
     ),
     AIModel(
-        id='gateway/vertex:gemini-2.5-pro',
+        id='gateway/gemini:gemini-2.5-pro',
         name='Gemini 2.5 Pro',
         builtin_tools=[
             'web_search',
