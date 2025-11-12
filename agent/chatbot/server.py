@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
-from typing import Literal
+from contextlib import asynccontextmanager
+from typing import Literal, cast
 
 import fastapi
 import httpx
@@ -19,11 +20,20 @@ from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 
 from .agent import agent
 
-# 'if-token-present' means nothing will be sent (and the example will work) if you don't have logfire configured
-logfire.configure(send_to_logfire='if-token-present')
+logfire.configure(service_name='ai-chat')
 logfire.instrument_pydantic_ai()
+logfire.instrument_mcp()
+logfire.instrument_httpx(capture_all=True)
 
-app = fastapi.FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: fastapi.FastAPI):
+    async with agent:
+        async with httpx.AsyncClient() as client:
+            yield {'client': client}
+
+
+app = fastapi.FastAPI(lifespan=lifespan)
 logfire.instrument_fastapi(app)
 
 
@@ -114,9 +124,11 @@ class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
 async def post_chat(request: Request) -> Response:
     run_input = VercelAIAdapter.build_run_input(await request.body())
     extra_data = ChatRequestExtra.model_validate(run_input.__pydantic_extra__)
-    return await VercelAIAdapter.dispatch_request(
+    client = cast(httpx.AsyncClient, request.state.client)
+    return await VercelAIAdapter[httpx.AsyncClient].dispatch_request(
         request,
         agent=agent,
+        deps=client,
         model=extra_data.model,
         builtin_tools=[BUILTIN_TOOLS[tool_id] for tool_id in extra_data.builtin_tools],
     )
@@ -125,8 +137,6 @@ async def post_chat(request: Request) -> Response:
 @app.get('/')
 @app.get('/{id}')
 async def index(request: Request):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
-        )
-        return HTMLResponse(content=response.content, status_code=response.status_code)
+    client = cast(httpx.AsyncClient, request.state.client)
+    response = await client.get('https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html')
+    return HTMLResponse(content=response.content, status_code=response.status_code)

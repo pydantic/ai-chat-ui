@@ -3,24 +3,22 @@ name = "logfire-docs-chatbot"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "bs4>=0.0.2",
-    "fastapi>=0.117.1",
-    "lancedb>=0.25.0",
-    "langchain-text-splitters>=0.3.11",
-    "logfire[fastapi]>=4.9.0",
+    "fastapi>=0.119.0",
+    "logfire[fastapi,httpx]>=4.9.0",
     "markdown2>=2.5.4",
     "pip>=25.2",
-    "pydantic-ai-slim[anthropic,openai,google,cli]>=1.14.0",
+    "pydantic-ai-slim[anthropic,openai,google,mcp,cli]>=1.14.0",
     "pyright>=1.1.405",
-    "python-frontmatter>=1.1.0",
-    "sentence-transformers>=5.1.1",
     "sse-starlette>=3.0.2",
     "starlette>=0.48.0",
     "uvicorn>=0.37.0",
     "watchfiles>=1.1.0",
 ]
 
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+
 [tool.ruff.format]
-# don't format python in docstrings, pytest-examples takes care of it
 docstring-code-format = false
 quote-style = "single"
