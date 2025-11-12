@@ -4,7 +4,6 @@ from pydantic_ai.mcp import MCPServerStreamableHTTP
 from pydantic_ai.tools import RunContext
 
 agent = Agent(
-    'gateway/anthropic:claude-sonnet-4-5',
     deps_type=httpx.AsyncClient,
     instructions="""
     You are an AI assistant that helps people find answers from documentation.

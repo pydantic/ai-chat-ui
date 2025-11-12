@@ -43,15 +43,15 @@ def options_chat():
 
 
 AIModelID = Literal[
-    'anthropic:claude-sonnet-4-5',
-    'openai-responses:gpt-5',
-    'google-gla:gemini-2.5-pro',
+    'gateway/anthropic:claude-sonnet-4-5',
+    'gateway/openai-responses:gpt-5',
+    'gateway/vertex:gemini-2.5-pro',
 ]
 BuiltinToolID = Literal['web_search', 'image_generation', 'code_execution']
 
 
 class AIModel(BaseModel):
-    id: AIModelID
+    id: str
     name: str
     builtin_tools: list[BuiltinToolID]
 
@@ -75,7 +75,7 @@ BUILTIN_TOOLS: dict[BuiltinToolID, AbstractBuiltinTool] = {
 
 AI_MODELS: list[AIModel] = [
     AIModel(
-        id='anthropic:claude-sonnet-4-5',
+        id='gateway/anthropic:claude-sonnet-4-5',
         name='Claude Sonnet 4.5',
         builtin_tools=[
             'web_search',
@@ -83,7 +83,7 @@ AI_MODELS: list[AIModel] = [
         ],
     ),
     AIModel(
-        id='openai-responses:gpt-5',
+        id='gateway/openai-responses:gpt-5',
         name='GPT 5',
         builtin_tools=[
             'web_search',
@@ -92,7 +92,7 @@ AI_MODELS: list[AIModel] = [
         ],
     ),
     AIModel(
-        id='google-gla:gemini-2.5-pro',
+        id='gateway/vertex:gemini-2.5-pro',
         name='Gemini 2.5 Pro',
         builtin_tools=[
             'web_search',
@@ -124,6 +124,7 @@ class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
 async def post_chat(request: Request) -> Response:
     run_input = VercelAIAdapter.build_run_input(await request.body())
     extra_data = ChatRequestExtra.model_validate(run_input.__pydantic_extra__)
+    logfire.info(f'{extra_data=}')
     client = cast(httpx.AsyncClient, request.state.client)
     return await VercelAIAdapter[httpx.AsyncClient].dispatch_request(
         request,
