@@ -55,7 +55,7 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, regenerate } = useChat()
+  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -165,6 +165,11 @@ const Chat = () => {
             </div>
           ))}
           {status === 'submitted' && <Loader />}
+          {status === 'error' && error && (
+            <div className="px-4 py-3 mx-4 my-2 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
+              <strong>Error:</strong> {error.message}
+            </div>
+          )}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
