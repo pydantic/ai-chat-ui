@@ -112,11 +112,11 @@ class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
 
 @app.post('/api/chat')
 async def post_chat(request: Request) -> Response:
-    request_data = await VercelAIAdapter.validate_request(request)
-    extra_data = ChatRequestExtra.model_validate(request_data.__pydantic_extra__)
+    run_input = VercelAIAdapter.build_run_input(await request.body())
+    extra_data = ChatRequestExtra.model_validate(run_input.__pydantic_extra__)
     return await VercelAIAdapter.dispatch_request(
-        agent,
         request,
+        agent=agent,
         model=extra_data.model,
         builtin_tools=[BUILTIN_TOOLS[tool_id] for tool_id in extra_data.builtin_tools],
     )

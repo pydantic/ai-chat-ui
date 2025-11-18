@@ -10,7 +10,7 @@ dependencies = [
     "logfire[fastapi]>=4.9.0",
     "markdown2>=2.5.4",
     "pip>=25.2",
-    "pydantic-ai-slim[anthropic,openai,google,cli]>=1.0.10",
+    "pydantic-ai-slim[anthropic,openai,google,cli]>=1.14.0",
     "pyright>=1.1.405",
     "python-frontmatter>=1.1.0",
     "sentence-transformers>=5.1.1",
@@ -19,9 +19,6 @@ dependencies = [
     "uvicorn>=0.37.0",
     "watchfiles>=1.1.0",
 ]
-
-[tool.uv.sources]
-pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", rev = "vercel-ai-chat" }
 
 [tool.ruff.format]
 # don't format python in docstrings, pytest-examples takes care of it
