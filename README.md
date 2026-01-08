@@ -5,8 +5,8 @@ Example React frontend for Pydantic AI Chat using [Vercel AI Elements](https://v
 ## Dev
 
 ```sh
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 
 # stop your logfire platform, to avoid port 8000 conflicts
 
