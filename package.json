@@ -11,7 +11,7 @@
     "format": "prettier --write -- .",
     "lint": "eslint",
     "lint-fix": "eslint --fix --quiet",
-    "dev": "BACKEND_PORT=7932 vite",
+    "dev": "BACKEND_PORT=38001 vite",
     "dev:server": "cd agent && uv run uvicorn chatbot.server:app --port 38001",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
