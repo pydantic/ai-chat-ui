@@ -73,9 +73,9 @@ export function Part({ part, message, status, regen, index, lastMessage }: PartP
         <ToolHeader type={part.type} state={part.state} />
         <ToolContent>
           <ToolInput input={part.input} />
-          {part.state === 'output-available' && (
+          {(part.state === 'output-available' || part.state === 'output-error') && (
             <ToolOutput
-              errorText=""
+              errorText={part.errorText}
               output={<CodeBlock code={JSON.stringify(part.output, null, 2)} language="json" />}
             />
           )}

@@ -1,9 +1,17 @@
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { ToolUIPart } from 'ai'
-import { CheckCircleIcon, ChevronDownIcon, CircleIcon, ClockIcon, XCircleIcon } from 'lucide-react'
-import type { ComponentProps, ReactNode } from 'react'
+import { CheckCircleIcon, ChevronDownIcon, CircleIcon, ClockIcon, CopyIcon, XCircleIcon } from 'lucide-react'
+import { useState, type ComponentProps, type ReactNode } from 'react'
 import { CodeBlock } from './code-block'
 import { getToolIcon } from '@/lib/tool-icons'
 
@@ -89,8 +97,19 @@ export type ToolOutputProps = ComponentProps<'div'> & {
 }
 
 export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutputProps) => {
+  const [copied, setCopied] = useState(false)
+
   if (!(output || errorText)) {
     return null
+  }
+
+  const copyError = () => {
+    if (errorText) {
+      navigator.clipboard.writeText(errorText).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+    }
   }
 
   return (
@@ -98,15 +117,35 @@ export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutpu
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
         {errorText ? 'Error' : 'Result'}
       </h4>
-      <div
-        className={cn(
-          'overflow-x-auto rounded-md text-xs [&_table]:w-full',
-          errorText ? 'bg-destructive/10 text-destructive' : 'bg-muted/50 text-foreground',
-        )}
-      >
-        {errorText && <div>{errorText}</div>}
-        {output && <div>{output}</div>}
-      </div>
+      {errorText && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="destructive" size="sm">
+              <XCircleIcon className="mr-1.5 size-4" />
+              View Error
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-destructive">Tool Error</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="max-h-96 overflow-auto rounded-md bg-destructive/10 p-4 text-destructive text-sm">
+                <pre className="whitespace-pre-wrap break-words">{errorText}</pre>
+              </div>
+              <Button variant="outline" size="sm" onClick={copyError}>
+                <CopyIcon className="mr-1.5 size-4" />
+                {copied ? 'Copied!' : 'Copy Error'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {output && !errorText && (
+        <div className="overflow-x-auto rounded-md bg-muted/50 text-foreground text-xs [&_table]:w-full">
+          <div>{output}</div>
+        </div>
+      )}
     </div>
   )
 }
