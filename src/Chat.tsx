@@ -28,6 +28,7 @@ import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
+import { DefaultChatTransport } from 'ai'
 
 interface ModelConfig {
   id: string
@@ -73,7 +74,9 @@ const Chat = () => {
   const [enabledTools, setEnabledTools] = useState<string[]>([])
   const basePath = getBasePath()
   const { messages, sendMessage, status, setMessages, regenerate, error } = useChat({
-    api: `${basePath}/api/chat`,
+    transport: new DefaultChatTransport({
+      api: `${basePath}/api/chat`,
+    }),
   })
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
