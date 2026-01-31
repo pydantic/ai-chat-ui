@@ -44,10 +44,26 @@ interface BuiltinTool {
 interface RemoteConfig {
   models: ModelConfig[]
   builtinTools: BuiltinTool[]
+  basePath?: string
+}
+
+interface PydanticAIConfig {
+  basePath?: string
+}
+
+declare global {
+  interface Window {
+    __PYDANTIC_AI_CONFIG__?: PydanticAIConfig
+  }
+}
+
+function getBasePath(): string {
+  return window.__PYDANTIC_AI_CONFIG__?.basePath ?? ''
 }
 
 async function getModels() {
-  const res = await fetch('/api/configure')
+  const basePath = getBasePath()
+  const res = await fetch(`${basePath}/api/configure`)
   return (await res.json()) as RemoteConfig
 }
 
@@ -55,7 +71,10 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
+  const basePath = getBasePath()
+  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat({
+    api: `${basePath}/api/chat`,
+  })
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
