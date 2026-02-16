@@ -1,13 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { ToolUIPart } from 'ai'
 import { CheckCircleIcon, ChevronDownIcon, CircleIcon, ClockIcon, CopyIcon, XCircleIcon } from 'lucide-react'
@@ -107,8 +101,10 @@ export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutpu
     if (errorText) {
       navigator.clipboard.writeText(errorText).then(() => {
         setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      })
+        setTimeout(() => {
+          setCopied(false)
+        }, 2000)
+      }, console.error)
     }
   }
 

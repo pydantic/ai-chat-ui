@@ -19,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
 import { Settings2Icon } from 'lucide-react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
@@ -83,7 +83,7 @@ const Chat = () => {
     textareaRef.current?.focus()
   }, [conversationId])
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault()
     if (input.trim()) {
       const theCurrentUrl = new URL(window.location.toString())
