@@ -1,12 +1,20 @@
 import { Message, MessageContent } from '@/components/ai-elements/message'
-
 import { Actions, Action } from '@/components/ai-elements/actions'
 import { Response } from '@/components/ai-elements/response'
 import { CopyIcon, RefreshCcwIcon } from 'lucide-react'
-import type { UIDataTypes, UIMessagePart, UITools, UIMessage } from 'ai'
+import {
+  Confirmation,
+  ConfirmationAction,
+  ConfirmationActions,
+  ConfirmationAccepted,
+  ConfirmationRejected,
+  ConfirmationRequest,
+  ConfirmationTitle,
+} from '@/components/ai-elements/confirmation'
+import type { ChatAddToolApproveResponseFunction, UIDataTypes, UIMessagePart, UITools, UIMessage } from 'ai'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Tool, ToolHeader, ToolInput, ToolOutput, ToolContent } from '@/components/ai-elements/tool'
-import { CodeBlock } from '@/components/ai-elements/code-block'
+import { getToolIcon } from '@/lib/tool-icons'
 
 interface PartProps {
   part: UIMessagePart<UIDataTypes, UITools>
@@ -15,9 +23,10 @@ interface PartProps {
   regen: (id: string) => void
   index: number
   lastMessage: boolean
+  onApprovalResponse: ChatAddToolApproveResponseFunction
 }
 
-export function Part({ part, message, status, regen, index, lastMessage }: PartProps) {
+export function Part({ part, message, status, regen, index, lastMessage, onApprovalResponse }: PartProps) {
   function copy(text: string) {
     navigator.clipboard.writeText(text).catch((error: unknown) => {
       console.error('Error copying text:', error)
@@ -65,20 +74,54 @@ export function Part({ part, message, status, regen, index, lastMessage }: PartP
       </Reasoning>
     )
   } else if (part.type === 'dynamic-tool') {
-    return <>Dynamic Tool, TODO {JSON.stringify(part)}</>
-  } else if ('toolCallId' in part) {
-    // return <div>{JSON.stringify(part)}</div>
     return (
       <Tool>
-        <ToolHeader type={part.type} state={part.state} />
+        <ToolHeader
+          type={part.type}
+          state={part.state}
+          toolName={part.toolName}
+          icon={getToolIcon(part.toolName, 'size-4 text-muted-foreground')}
+        />
         <ToolContent>
           <ToolInput input={part.input} />
-          {(part.state === 'output-available' || part.state === 'output-error') && (
-            <ToolOutput
-              errorText={part.errorText}
-              output={<CodeBlock code={JSON.stringify(part.output, null, 2)} language="json" />}
-            />
+          <ToolOutput errorText={part.errorText} output={part.output} />
+        </ToolContent>
+      </Tool>
+    )
+  } else if ('toolCallId' in part) {
+    const toolId = part.type.split('-').slice(1).join('-')
+    return (
+      <Tool defaultOpen={part.state === 'approval-requested'}>
+        <ToolHeader type={part.type} state={part.state} icon={getToolIcon(toolId, 'size-4 text-muted-foreground')} />
+        <ToolContent>
+          <ToolInput input={part.input} />
+          {'approval' in part && (
+            <Confirmation approval={part.approval as { id: string }} state={part.state}>
+              <ConfirmationRequest>
+                <ConfirmationTitle>This tool requires your approval to run</ConfirmationTitle>
+                <ConfirmationActions>
+                  <ConfirmationAction
+                    onClick={() => {
+                      void onApprovalResponse({ id: (part.approval as { id: string }).id, approved: true })
+                    }}
+                  >
+                    Approve
+                  </ConfirmationAction>
+                  <ConfirmationAction
+                    variant="destructive"
+                    onClick={() => {
+                      void onApprovalResponse({ id: (part.approval as { id: string }).id, approved: false })
+                    }}
+                  >
+                    Deny
+                  </ConfirmationAction>
+                </ConfirmationActions>
+              </ConfirmationRequest>
+              <ConfirmationAccepted>Approved. Executing tool.</ConfirmationAccepted>
+              <ConfirmationRejected>Denied. Tool will not run.</ConfirmationRejected>
+            </Confirmation>
           )}
+          <ToolOutput errorText={part.errorText} output={part.output} />
         </ToolContent>
       </Tool>
     )

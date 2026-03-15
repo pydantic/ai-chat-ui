@@ -25,6 +25,10 @@ dist-ssr
 /.claude/settings.local.json
 /scratch/
 /agent/.venv/
+/tests/server/.venv/
 /tsconfig.tsbuildinfo
 .env
 *.tgz
+/test-results/
+/playwright-report/
+/tmp/

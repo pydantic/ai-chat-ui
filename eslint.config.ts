@@ -19,7 +19,19 @@ export default defineConfig(
       globals: globals.node,
     },
   },
-  { ignores: ['dist/**', 'server/**', 'node_modules/**', 'scratch/**', 'agent/**', 'commitlint.config.js'] },
+  {
+    ignores: [
+      'dist/**',
+      'server/**',
+      'node_modules/**',
+      'scratch/**',
+      'agent/**',
+      'tests/**',
+      'commitlint.config.js',
+      'playwright.config.ts',
+      'vitest.config.ts',
+    ],
+  },
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -45,6 +57,7 @@ export default defineConfig(
         },
       ],
       '@typescript-eslint/no-non-null-assertion': 'off',
+      'no-void': ['error', { allowAsStatement: true }],
     },
   },
   {
