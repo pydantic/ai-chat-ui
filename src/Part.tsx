@@ -75,7 +75,7 @@ export function Part({ part, message, status, regen, index, lastMessage, onAppro
     )
   } else if (part.type === 'dynamic-tool') {
     return (
-      <Tool>
+      <Tool data-tool-name={part.toolName}>
         <ToolHeader
           type={part.type}
           state={part.state}
@@ -91,7 +91,7 @@ export function Part({ part, message, status, regen, index, lastMessage, onAppro
   } else if ('toolCallId' in part) {
     const toolId = part.type.split('-').slice(1).join('-')
     return (
-      <Tool defaultOpen={part.state === 'approval-requested'}>
+      <Tool data-tool-name={toolId} defaultOpen={part.state === 'approval-requested'}>
         <ToolHeader type={part.type} state={part.state} icon={getToolIcon(toolId, 'size-4 text-muted-foreground')} />
         <ToolContent>
           <ToolInput input={part.input} />

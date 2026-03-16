@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { sendMessage } from './helpers'
+import { sendMessage } from './conversation'
 
 test.describe('model selector', () => {
   test('shows available models from server', async ({ page }) => {
@@ -14,6 +14,6 @@ test.describe('model selector', () => {
     await page.goto('/')
     await sendMessage(page, 'text', 'hello')
 
-    await expect(page.getByText('Hello from the test server')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Hello from the test server')).toBeVisible()
   })
 })
