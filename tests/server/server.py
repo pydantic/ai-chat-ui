@@ -128,12 +128,15 @@ async def stream_approval(
     }
 
 
-models = {
+models: dict[str, object] = {
     "text": FunctionModel(stream_function=stream_text),
     "tool": FunctionModel(stream_function=stream_tool),
     "multi-tool": FunctionModel(stream_function=stream_multi_tool),
     "error": FunctionModel(stream_function=stream_error),
     "approval": FunctionModel(stream_function=stream_approval),
+    "anthropic": "anthropic:claude-haiku-4-5",
+    "openai": "openai-responses:gpt-4.1-nano",
+    "google": "google-gla:gemini-2.0-flash",
 }
 
 SDK_VERSION: Literal[5, 6] = 6

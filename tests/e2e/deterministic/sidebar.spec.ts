@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import { sendMessage } from './conversation'
-import { sidebar } from './sidebar'
+import { sendMessage } from '../conversation'
+import { sidebar } from '../sidebar'
 
 test.describe('sidebar', () => {
   test('new conversation appears in sidebar after sending message', async ({ page }) => {

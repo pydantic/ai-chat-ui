@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { sendMessage } from './conversation'
+import { sendMessage } from '../conversation'
 
 test.describe('model selector', () => {
   test('shows available models from server', async ({ page }) => {

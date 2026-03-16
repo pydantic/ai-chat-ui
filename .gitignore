@@ -26,6 +26,7 @@ dist-ssr
 /scratch/
 /agent/.venv/
 /tests/server/.venv/
+__pycache__/
 /tsconfig.tsbuildinfo
 .env
 *.tgz

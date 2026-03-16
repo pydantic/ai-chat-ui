@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import { chat, sendMessage, waitForPersisted } from './conversation'
-import { sidebar } from './sidebar'
+import { chat, sendMessage, waitForPersisted } from '../conversation'
+import { sidebar } from '../sidebar'
 
 test.describe('conversation lifecycle', () => {
   test('messages persist across page reload', async ({ page }) => {

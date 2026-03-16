@@ -24,8 +24,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test:headless": "vitest run --config vitest.config.ts",
-    "test:e2e": "playwright test --project=chromium",
-    "test:e2e:video": "playwright test --project=chromium-video"
+    "test:e2e": "E2E_TEST_DIR=tests/e2e/deterministic playwright test",
+    "test:e2e:llm": "E2E_TEST_DIR=tests/e2e/llm playwright test"
   },
   "files": [
     "dist"

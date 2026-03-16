@@ -1,9 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const TEST_SERVER_PORT = 8787
+const record = !!process.env.E2E_VIDEO
 
 export default defineConfig({
-  testDir: 'tests/e2e',
+  testDir: process.env.E2E_TEST_DIR ?? 'tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -13,23 +14,12 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
+    ...devices['Desktop Chrome'],
     baseURL: `http://localhost:5173`,
     trace: 'on-first-retry',
+    video: record ? 'on' : 'off',
+    launchOptions: record ? { slowMo: 500 } : {},
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'chromium-video',
-      use: {
-        ...devices['Desktop Chrome'],
-        video: 'on',
-        launchOptions: { slowMo: 500 },
-      },
-    },
-  ],
   webServer: [
     {
       command: `cd tests/server && uv run uvicorn server:app --port ${TEST_SERVER_PORT}`,

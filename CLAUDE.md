@@ -29,6 +29,16 @@ uv run uvicorn chatbot.server:app  # Start backend on port 8000
 
 Note: Stop any logfire platform instances to avoid port 8000 conflicts.
 
+**Testing:**
+
+```bash
+npm run test:headless        # Vitest headless unit tests
+npm run test:e2e             # Deterministic Playwright E2E tests
+npm run test:e2e:llm         # LLM provider E2E tests (requires API keys)
+```
+
+Set `E2E_VIDEO=1` to record videos with slowMo for any E2E target. Set `E2E_TEST_DIR` to override which test directory Playwright runs.
+
 ## Architecture
 
 ### Frontend Structure

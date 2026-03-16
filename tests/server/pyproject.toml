@@ -8,4 +8,6 @@ dependencies = [
 ]
 
 [tool.uv]
-dev-dependencies = []
+dev-dependencies = [
+    "pydantic-ai-slim[anthropic,openai,google]",
+]

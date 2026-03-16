@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { sendMessage } from './conversation'
+import { sendMessage } from '../conversation'
 
 test.describe('chat', () => {
   test('sends a message and receives a response', async ({ page }) => {

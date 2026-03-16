@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import { sendMessage } from './conversation'
-import { toolCard } from './tools'
+import { sendMessage } from '../conversation'
+import { toolCard } from '../tools'
 
 test.describe('error handling', () => {
   test('shows error dialog with error details', async ({ page }) => {
