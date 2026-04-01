@@ -1,15 +1,37 @@
+import { useEffect, useState } from 'react'
 import Chat from './Chat.tsx'
 import { AppSidebar } from './components/app-sidebar.tsx'
 import { ThemeProvider } from './components/theme-provider.tsx'
 import { SidebarProvider } from './components/ui/sidebar.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
 import { cn } from './lib/utils.ts'
+import { migrateFromLocalStorage } from './lib/chat-db.ts'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()
 
 export default function App() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    migrateFromLocalStorage()
+      .then((migrated) => {
+        if (migrated) {
+          window.dispatchEvent(new Event('conversations-changed'))
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('Migration failed:', err)
+      })
+      .finally(() => {
+        setReady(true)
+      })
+  }, [])
+
+  if (!ready) {
+    return null
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="pydantic-chat-ui-theme">

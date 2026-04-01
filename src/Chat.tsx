@@ -26,8 +26,8 @@ import { useThrottle } from '@uidotdev/usehooks'
 import { nanoid } from 'nanoid'
 import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
-import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
+import { getMessages, saveMessages, saveConversation } from '@/lib/chat-db'
 
 interface ModelConfig {
   id: string
@@ -53,7 +53,7 @@ async function getModels() {
 
 const Chat = () => {
   const [input, setInput] = useState('')
-  const [model, setModel] = useState<string>('')
+  const [model, setModel] = useState('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
   const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
   const throttledMessages = useThrottle(messages, 500)
@@ -75,10 +75,15 @@ const Chat = () => {
     if (conversationId === '/') {
       setMessages([])
     } else {
-      const localStorageMessages = window.localStorage.getItem(conversationId)
-      if (localStorageMessages) {
-        setMessages(JSON.parse(localStorageMessages) as typeof messages)
-      }
+      getMessages(conversationId)
+        .then((storedMessages) => {
+          if (storedMessages) {
+            setMessages(storedMessages as typeof messages)
+          }
+        })
+        .catch((err: unknown) => {
+          console.error('Failed to load messages:', err)
+        })
     }
     textareaRef.current?.focus()
   }, [conversationId])
@@ -93,7 +98,7 @@ const Chat = () => {
         const newConversationId = `/${nanoid()}`
         setConversationId(newConversationId)
 
-        saveConversationEntryInLocalStorage(newConversationId, input)
+        saveConversationEntry(newConversationId, input)
 
         theCurrentUrl.pathname = newConversationId
         window.history.pushState({}, '', theCurrentUrl.toString())
@@ -112,8 +117,10 @@ const Chat = () => {
   }
 
   useEffect(() => {
-    if (conversationId && throttledMessages.length > 0) {
-      window.localStorage.setItem(conversationId, JSON.stringify(throttledMessages))
+    if (conversationId && conversationId !== '/' && throttledMessages.length > 0) {
+      saveMessages(conversationId, throttledMessages).catch((err: unknown) => {
+        console.error('Failed to save messages:', err)
+      })
     }
   }, [throttledMessages, conversationId])
 
@@ -261,19 +268,19 @@ export default Chat
 
 const MAX_FIRST_MESSAGE_LENGTH = 30
 
-function saveConversationEntryInLocalStorage(newConversationId: string, firstMessage: string) {
-  const currentConversations = window.localStorage.getItem('conversationIds') ?? '[]'
-  const conversationIds = JSON.parse(currentConversations) as ConversationEntry[]
+function saveConversationEntry(newConversationId: string, firstMessage: string) {
   const trimmedFirstMessage =
     firstMessage.length > MAX_FIRST_MESSAGE_LENGTH
       ? firstMessage.slice(0, MAX_FIRST_MESSAGE_LENGTH) + '...'
       : firstMessage
-  conversationIds.unshift({
+
+  saveConversation({
     id: newConversationId,
     firstMessage: trimmedFirstMessage,
     timestamp: Date.now(),
   })
-  window.localStorage.setItem('conversationIds', JSON.stringify(conversationIds))
-  // dispatch a custom event so that the sidebar can update
-  window.dispatchEvent(new Event('local-storage-change'))
+    .then(() => window.dispatchEvent(new Event('conversations-changed')))
+    .catch((err: unknown) => {
+      console.error('Failed to save conversation:', err)
+    })
 }
