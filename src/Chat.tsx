@@ -19,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
 import { Settings2Icon } from 'lucide-react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
@@ -71,14 +71,14 @@ const Chat = () => {
     }
   }, [configQuery.data])
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (conversationId === '/') {
       setMessages([])
     } else {
       getMessages(conversationId)
         .then((storedMessages) => {
           if (storedMessages) {
-            setMessages(storedMessages as typeof messages)
+            setMessages(storedMessages)
           }
         })
         .catch((err: unknown) => {

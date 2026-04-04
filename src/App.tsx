@@ -29,9 +29,6 @@ export default function App() {
       })
   }, [])
 
-  if (!ready) {
-    return null
-  }
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="pydantic-chat-ui-theme">
@@ -45,7 +42,7 @@ export default function App() {
                 'has-[.stick-to-bottom:empty]:overflow-visible has-[.stick-to-bottom:empty]:basis-[0px] transition-[flex-basis] duration-200',
               )}
             >
-              <Chat />
+              {ready && <Chat />}
             </div>
           </div>
         </SidebarProvider>
