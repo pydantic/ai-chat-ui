@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
+import { stripBasePath, withBasePath } from '@/lib/base-path'
 
 export function useConversationIdFromUrl(): [string, (id: string) => void] {
   const [conversationId, setConversationId] = useState(() => {
-    return window.location.pathname
+    return stripBasePath(window.location.pathname)
   })
 
   useEffect(() => {
     const handlePopState = () => {
-      const newId = window.location.pathname
+      const newId = stripBasePath(window.location.pathname)
       console.log('popstate event detected', window.location.pathname)
       setConversationId(newId)
     }
@@ -24,7 +25,7 @@ export function useConversationIdFromUrl(): [string, (id: string) => void] {
   const setConversationIdAndUrl = (id: string) => {
     setConversationId(id)
     const url = new URL(window.location.toString())
-    url.pathname = id || '/'
+    url.pathname = withBasePath(id || '/')
     window.history.pushState({}, '', url.toString())
   }
 

@@ -29,6 +29,7 @@ import { useConversationIdFromUrl } from '@/hooks/useConversationIdFromUrl'
 import { cn } from '@/lib/utils'
 import type { ConversationEntry } from '@/types'
 import { getConversations, deleteConversation as deleteConv } from '@/lib/chat-db'
+import { stripBasePath, withBasePath } from '@/lib/base-path'
 import { ModeToggle } from './mode-toggle'
 import logoSvg from '../assets/logo.svg'
 
@@ -71,10 +72,9 @@ function deleteConversation(conversationId: string) {
   return deleteConv(conversationId).then(() => {
     window.dispatchEvent(new Event('conversations-changed'))
 
-    // If the deleted conversation was active, navigate to home
-    const currentPath = window.location.pathname
+    const currentPath = stripBasePath(window.location.pathname)
     if (currentPath === conversationId) {
-      window.history.pushState({}, '', '/')
+      window.history.pushState({}, '', withBasePath('/'))
       window.dispatchEvent(new Event('history-state-changed'))
     }
   })
@@ -126,7 +126,7 @@ export function AppSidebar() {
             <SidebarMenu className="mb-2">
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Start a new conversation">
-                  <a href="/" onClick={doLocalNavigation}>
+                  <a href={withBasePath('/')} onClick={doLocalNavigation}>
                     <CirclePlus />
                     <span>New conversation</span>
                   </a>
@@ -141,7 +141,7 @@ export function AppSidebar() {
                     <div className="flex items-center gap-1 h-auto">
                       <SidebarMenuButton asChild tooltip={conversation.firstMessage} className="flex-1">
                         <a
-                          href={conversation.id}
+                          href={withBasePath(conversation.id)}
                           onClick={doLocalNavigation}
                           className={cn('h-auto flex items-start gap-2', {
                             'bg-accent pointer-events-none': conversation.id === conversationId,

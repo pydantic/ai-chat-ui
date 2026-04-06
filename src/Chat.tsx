@@ -28,6 +28,7 @@ import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import { getToolIcon } from '@/lib/tool-icons'
 import { getMessages, saveMessages, saveConversation } from '@/lib/chat-db'
+import { stripBasePath, withBasePath } from '@/lib/base-path'
 
 interface ModelConfig {
   id: string
@@ -94,13 +95,13 @@ const Chat = () => {
       const theCurrentUrl = new URL(window.location.toString())
 
       // we're starting a new conversation
-      if (theCurrentUrl.pathname === '/') {
+      if (stripBasePath(theCurrentUrl.pathname) === '/') {
         const newConversationId = `/${nanoid()}`
         setConversationId(newConversationId)
 
         saveConversationEntry(newConversationId, input)
 
-        theCurrentUrl.pathname = newConversationId
+        theCurrentUrl.pathname = withBasePath(newConversationId)
         window.history.pushState({}, '', theCurrentUrl.toString())
       }
 
