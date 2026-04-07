@@ -21,7 +21,9 @@
     "dev": "BACKEND_PORT=38001 vite",
     "dev:server": "cd agent && uv run uvicorn chatbot.server:app --port 38001",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "files": [
     "dist"
@@ -65,6 +67,7 @@
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
     "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.59.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/npm": "^13.1.3",

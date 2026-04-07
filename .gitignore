@@ -28,3 +28,5 @@ dist-ssr
 /tsconfig.tsbuildinfo
 .env
 *.tgz
+/test-results/
+/playwright-report/
