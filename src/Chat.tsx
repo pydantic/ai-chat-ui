@@ -14,18 +14,20 @@ import {
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
+import { EditMessageDialog } from '@/components/edit-message-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
 import { Settings2Icon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
 import { nanoid } from 'nanoid'
 import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
+import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
 import { getMessages, saveMessages, saveConversation } from '@/lib/chat-db'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
@@ -56,10 +58,19 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
+  const { messages, sendMessage, status, setMessages, error } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Edit state
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const editDraftsRef = useRef(new Map<string, string>())
+  const [pendingEdit, setPendingEdit] = useState<{ messageId: string; text: string } | null>(null)
+  // Deferred send: set this ref, then call setMessages. The useEffect below
+  // will fire sendMessage after the messages state has been committed.
+  const pendingSendRef = useRef<{ text: string; model: string; builtinTools: string[] } | null>(null)
+  const [sendTrigger, setSendTrigger] = useState(0)
 
   const configQuery = useQuery({
     queryFn: getModels,
@@ -73,6 +84,7 @@ const Chat = () => {
   }, [configQuery.data])
 
   useEffect(() => {
+    setEditingMessageId(null)
     if (conversationId === '/') {
       setMessages([])
     } else {
@@ -80,6 +92,12 @@ const Chat = () => {
         .then((storedMessages) => {
           if (storedMessages) {
             setMessages(storedMessages)
+
+            // Auto-send pending fork message after loading forked conversation
+            // Uses deferred send to ensure setMessages is committed first
+            if (pendingSendRef.current) {
+              setSendTrigger((n) => n + 1)
+            }
           }
         })
         .catch((err: unknown) => {
@@ -117,6 +135,18 @@ const Chat = () => {
     }
   }
 
+  // Fires deferred sendMessage after setMessages has been committed
+  useEffect(() => {
+    if (!pendingSendRef.current) return
+    const pending = pendingSendRef.current
+    pendingSendRef.current = null
+    sendMessage({ text: pending.text }, { body: { model: pending.model, builtinTools: pending.builtinTools } }).catch(
+      (error: unknown) => {
+        console.error('Error sending deferred message:', error)
+      },
+    )
+  }, [sendTrigger])
+
   useEffect(() => {
     if (conversationId && conversationId !== '/' && throttledMessages.length > 0) {
       saveMessages(conversationId, throttledMessages).catch((err: unknown) => {
@@ -125,11 +155,74 @@ const Chat = () => {
     }
   }, [throttledMessages, conversationId])
 
-  function regen(messageId: string) {
-    regenerate({ messageId }).catch((error: unknown) => {
-      console.error('Error regenerating message:', error)
+  const handleStartEdit = useCallback((messageId: string) => {
+    setEditingMessageId(messageId)
+  }, [])
+
+  const handleCancelEdit = useCallback((messageId: string, draft: string) => {
+    editDraftsRef.current.set(messageId, draft)
+    setEditingMessageId(null)
+  }, [])
+
+  const handleSubmitEdit = useCallback(
+    (messageId: string, newText: string) => {
+      const original = messages.find((m) => m.id === messageId)
+      const originalText = original?.parts.find((p) => p.type === 'text')
+      const unchanged = originalText && 'text' in originalText && originalText.text === newText
+
+      editDraftsRef.current.delete(messageId)
+      setEditingMessageId(null)
+
+      if (unchanged) return
+
+      setPendingEdit({ messageId, text: newText })
+    },
+    [messages],
+  )
+
+  const handleModify = useCallback(() => {
+    if (!pendingEdit) return
+    const messageIndex = messages.findIndex((m) => m.id === pendingEdit.messageId)
+    if (messageIndex === -1) return
+
+    pendingSendRef.current = { text: pendingEdit.text, model, builtinTools: enabledTools }
+    setMessages(messages.slice(0, messageIndex))
+    setSendTrigger((n) => n + 1)
+    setPendingEdit(null)
+  }, [pendingEdit, messages, setMessages, model, enabledTools])
+
+  const handleFork = useCallback(() => {
+    if (!pendingEdit) return
+    const messageIndex = messages.findIndex((m) => m.id === pendingEdit.messageId)
+    if (messageIndex === -1) return
+
+    const newConversationId = `/${nanoid()}`
+    const forkedMessages = messages.slice(0, messageIndex)
+
+    // Determine first message text for the sidebar entry
+    const firstUserMessage = forkedMessages.find((m) => m.role === 'user')
+    const firstMessageText = firstUserMessage?.parts.find((p) => p.type === 'text')
+    const firstMessage = firstMessageText && 'text' in firstMessageText ? firstMessageText.text : 'Forked conversation'
+
+    // Save fork to IndexedDB
+    saveConversationEntry(newConversationId, firstMessage, { conversationId, messageIndex })
+    saveMessages(newConversationId, forkedMessages).catch((err: unknown) => {
+      console.error('Failed to save forked messages:', err)
     })
-  }
+
+    // Set up pending message to auto-send after navigation
+    pendingSendRef.current = { text: pendingEdit.text, model, builtinTools: enabledTools }
+
+    setPendingEdit(null)
+    setConversationId(newConversationId)
+  }, [pendingEdit, messages, conversationId, model, enabledTools, setConversationId])
+
+  const handleNavigateToFork = useCallback(
+    (targetConversationId: string) => {
+      setConversationId(targetConversationId)
+    },
+    [setConversationId],
+  )
 
   const availableTools = useMemo(() => {
     const enabledToolIds = configQuery.data?.models.find((entry) => entry.id === model)?.builtinTools ?? []
@@ -144,8 +237,8 @@ const Chat = () => {
     <>
       <Conversation className="h-full">
         <ConversationContent>
-          {messages.map((message) => (
-            <div key={message.id}>
+          {messages.map((message, messageIndex) => (
+            <div key={message.id} className={message.role === 'user' ? 'group/user-message' : undefined}>
               {message.role === 'assistant' &&
                 message.parts.filter((part) => part.type === 'source-url').length > 0 && (
                   <Sources>
@@ -166,8 +259,15 @@ const Chat = () => {
                   message={message}
                   status={status}
                   index={i}
-                  regen={regen}
                   lastMessage={message.id === messages.at(-1)?.id}
+                  isEditing={editingMessageId === message.id}
+                  editDraft={editDraftsRef.current.get(message.id)}
+                  onStartEdit={handleStartEdit}
+                  onCancelEdit={handleCancelEdit}
+                  onSubmitEdit={handleSubmitEdit}
+                  conversationId={conversationId}
+                  messageIndex={messageIndex}
+                  onNavigateToFork={handleNavigateToFork}
                 />
               ))}
             </div>
@@ -261,6 +361,15 @@ const Chat = () => {
           </PromptInputToolbar>
         </PromptInput>
       </div>
+
+      <EditMessageDialog
+        open={pendingEdit !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingEdit(null)
+        }}
+        onModify={handleModify}
+        onFork={handleFork}
+      />
     </>
   )
 }
@@ -269,17 +378,26 @@ export default Chat
 
 const MAX_FIRST_MESSAGE_LENGTH = 30
 
-function saveConversationEntry(newConversationId: string, firstMessage: string) {
+function saveConversationEntry(
+  newConversationId: string,
+  firstMessage: string,
+  forkOf?: ConversationEntry['forkOf'],
+) {
   const trimmedFirstMessage =
     firstMessage.length > MAX_FIRST_MESSAGE_LENGTH
       ? firstMessage.slice(0, MAX_FIRST_MESSAGE_LENGTH) + '...'
       : firstMessage
 
-  saveConversation({
+  const entry: ConversationEntry = {
     id: newConversationId,
     firstMessage: trimmedFirstMessage,
     timestamp: Date.now(),
-  })
+  }
+  if (forkOf) {
+    entry.forkOf = forkOf
+  }
+
+  saveConversation(entry)
     .then(() => window.dispatchEvent(new Event('conversations-changed')))
     .catch((err: unknown) => {
       console.error('Failed to save conversation:', err)
