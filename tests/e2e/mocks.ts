@@ -62,3 +62,35 @@ export async function setupMocks(page: Page, responseText = 'This is a mock resp
     })
   })
 }
+
+/**
+ * Sets up mocks where each call to /api/chat returns a different response
+ * from the provided array (cycling through them).
+ */
+export async function setupMocksWithResponses(page: Page, responses: string[]) {
+  let callIndex = 0
+
+  await page.route('**/api/configure', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(CONFIGURE_RESPONSE),
+    }),
+  )
+
+  await page.route('**/api/chat', (route) => {
+    const text = responses[callIndex % responses.length]
+    callIndex++
+    const partId = `aitxt_mock${String(callIndex).padStart(18, '0')}`
+    return route.fulfill({
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'X-Vercel-AI-UI-Message-Stream': 'v1',
+      },
+      body: buildStreamBody(text, partId),
+    })
+  })
+}

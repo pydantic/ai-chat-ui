@@ -23,7 +23,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "test:chrome": "playwright test --headed --project=chromium"
   },
   "files": [
     "dist"
