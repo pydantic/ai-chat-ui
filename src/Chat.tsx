@@ -378,11 +378,7 @@ export default Chat
 
 const MAX_FIRST_MESSAGE_LENGTH = 30
 
-function saveConversationEntry(
-  newConversationId: string,
-  firstMessage: string,
-  forkOf?: ConversationEntry['forkOf'],
-) {
+function saveConversationEntry(newConversationId: string, firstMessage: string, forkOf?: ConversationEntry['forkOf']) {
   const trimmedFirstMessage =
     firstMessage.length > MAX_FIRST_MESSAGE_LENGTH
       ? firstMessage.slice(0, MAX_FIRST_MESSAGE_LENGTH) + '...'

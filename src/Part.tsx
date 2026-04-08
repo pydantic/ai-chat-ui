@@ -81,12 +81,13 @@ export function Part({
               />
             </MessageContent>
           </Message>
-          <Actions className="mt-1">
+          <Actions className="mt-1 justify-end">
             <Action
               onClick={() => {
                 onSubmitEdit?.(message.id, editText)
               }}
               label="Submit edit"
+              className="text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:text-green-400"
             >
               <CheckIcon className="size-3" />
             </Action>
@@ -95,6 +96,7 @@ export function Part({
                 onCancelEdit?.(message.id, editText)
               }}
               label="Cancel edit"
+              className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
             >
               <XIcon className="size-3" />
             </Action>
@@ -123,7 +125,7 @@ export function Part({
           </Actions>
         )}
         {message.role === 'user' && index === message.parts.length - 1 && (
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 justify-end">
             {status !== 'submitted' && status !== 'streaming' && (
               <Actions className="opacity-0 group-hover/user-message:opacity-100 transition-opacity">
                 <Action
