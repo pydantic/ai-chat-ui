@@ -155,11 +155,21 @@ const Chat = () => {
     setEditingMessageId(null)
   }, [])
 
-  const handleSubmitEdit = useCallback((messageId: string, newText: string) => {
-    editDraftsRef.current.delete(messageId)
-    setEditingMessageId(null)
-    setPendingEdit({ messageId, text: newText })
-  }, [])
+  const handleSubmitEdit = useCallback(
+    (messageId: string, newText: string) => {
+      const original = messages.find((m) => m.id === messageId)
+      const originalText = original?.parts.find((p) => p.type === 'text')
+      const unchanged = originalText && 'text' in originalText && originalText.text === newText
+
+      editDraftsRef.current.delete(messageId)
+      setEditingMessageId(null)
+
+      if (unchanged) return
+
+      setPendingEdit({ messageId, text: newText })
+    },
+    [messages],
+  )
 
   const handleModify = useCallback(() => {
     if (!pendingEdit) return
