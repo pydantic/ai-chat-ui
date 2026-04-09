@@ -189,7 +189,9 @@ const Chat = () => {
     setMessages(messages.slice(0, messageIndex))
     setPendingEdit(null)
     // Defer to next macrotask so setMessages commits before the send effect fires
-    setTimeout(() => setSendTrigger((n) => n + 1), 0)
+    setTimeout(() => {
+      setSendTrigger((n) => n + 1)
+    }, 0)
   }, [pendingEdit, messages, setMessages, model, enabledTools])
 
   const handleFork = useCallback(() => {
@@ -206,7 +208,7 @@ const Chat = () => {
     const firstUserMessage = forkedMessages.find((m) => m.role === 'user')
     const firstMessageText = firstUserMessage?.parts.find((p) => p.type === 'text')
     const originalText = firstMessageText && 'text' in firstMessageText ? firstMessageText.text : undefined
-    const firstMessage = originalText ?? pendingEdit.text ?? 'Forked conversation'
+    const firstMessage = originalText ?? pendingEdit.text
 
     // Save fork to IndexedDB
     saveConversationEntry(newConversationId, firstMessage, { conversationId, messageIndex })

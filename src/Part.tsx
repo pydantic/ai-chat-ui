@@ -2,7 +2,15 @@ import { Message, MessageContent } from '@/components/ai-elements/message'
 
 import { Actions, Action } from '@/components/ai-elements/actions'
 import { Response } from '@/components/ai-elements/response'
-import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, PencilIcon, RefreshCcwIcon, XIcon } from 'lucide-react'
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  PencilIcon,
+  RefreshCcwIcon,
+  XIcon,
+} from 'lucide-react'
 import type { UIDataTypes, UIMessagePart, UITools, UIMessage } from 'ai'
 import { useEffect, useState } from 'react'
 import { useForkSiblings } from '@/hooks/useForkSiblings'
@@ -210,8 +218,7 @@ function ForkNavigation({
         className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
         disabled={currentIndex === 0}
         onClick={() => {
-          const prev = siblings[currentIndex - 1]
-          if (prev) onNavigate(prev.id)
+          onNavigate(siblings[currentIndex - 1].id)
         }}
         aria-label="Previous fork"
       >
@@ -225,8 +232,7 @@ function ForkNavigation({
         className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
         disabled={currentIndex === total - 1}
         onClick={() => {
-          const next = siblings[currentIndex + 1]
-          if (next) onNavigate(next.id)
+          onNavigate(siblings[currentIndex + 1].id)
         }}
         aria-label="Next fork"
       >
