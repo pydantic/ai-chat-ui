@@ -58,7 +58,7 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, error } = useChat()
+  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -187,12 +187,14 @@ const Chat = () => {
 
     pendingSendRef.current = { text: pendingEdit.text, model, builtinTools: enabledTools }
     setMessages(messages.slice(0, messageIndex))
-    setSendTrigger((n) => n + 1)
     setPendingEdit(null)
+    // Defer to next macrotask so setMessages commits before the send effect fires
+    setTimeout(() => setSendTrigger((n) => n + 1), 0)
   }, [pendingEdit, messages, setMessages, model, enabledTools])
 
   const handleFork = useCallback(() => {
     if (!pendingEdit) return
+    if (conversationId === '/') return
     const messageIndex = messages.findIndex((m) => m.id === pendingEdit.messageId)
     if (messageIndex === -1) return
 
@@ -200,9 +202,11 @@ const Chat = () => {
     const forkedMessages = messages.slice(0, messageIndex)
 
     // Determine first message text for the sidebar entry
+    // If editing the first user message, use the new text; otherwise use the original
     const firstUserMessage = forkedMessages.find((m) => m.role === 'user')
     const firstMessageText = firstUserMessage?.parts.find((p) => p.type === 'text')
-    const firstMessage = firstMessageText && 'text' in firstMessageText ? firstMessageText.text : 'Forked conversation'
+    const originalText = firstMessageText && 'text' in firstMessageText ? firstMessageText.text : undefined
+    const firstMessage = originalText ?? pendingEdit.text ?? 'Forked conversation'
 
     // Save fork to IndexedDB
     saveConversationEntry(newConversationId, firstMessage, { conversationId, messageIndex })
@@ -223,6 +227,12 @@ const Chat = () => {
     },
     [setConversationId],
   )
+
+  function regen(messageId: string) {
+    regenerate({ messageId }).catch((error: unknown) => {
+      console.error('Error regenerating message:', error)
+    })
+  }
 
   const availableTools = useMemo(() => {
     const enabledToolIds = configQuery.data?.models.find((entry) => entry.id === model)?.builtinTools ?? []
@@ -259,6 +269,7 @@ const Chat = () => {
                   message={message}
                   status={status}
                   index={i}
+                  regen={regen}
                   lastMessage={message.id === messages.at(-1)?.id}
                   isEditing={editingMessageId === message.id}
                   editDraft={editDraftsRef.current.get(message.id)}

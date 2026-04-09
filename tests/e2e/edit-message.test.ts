@@ -229,16 +229,13 @@ test.describe('fork conversation', () => {
   })
 })
 
-test.describe('no regenerate button', () => {
-  test('assistant messages have copy but no retry button', async ({ page }) => {
+test.describe('assistant message actions', () => {
+  test('assistant messages have retry and copy buttons', async ({ page }) => {
     await setupMocks(page)
     await page.goto('/')
     await sendMessage(page, 'Test message')
 
-    // Copy button should exist on assistant message
     await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible()
-
-    // Retry/Regenerate button should not exist
-    await expect(page.getByRole('button', { name: 'Retry' })).not.toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
   })
 })

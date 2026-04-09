@@ -2,7 +2,7 @@ import { Message, MessageContent } from '@/components/ai-elements/message'
 
 import { Actions, Action } from '@/components/ai-elements/actions'
 import { Response } from '@/components/ai-elements/response'
-import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, PencilIcon, XIcon } from 'lucide-react'
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, PencilIcon, RefreshCcwIcon, XIcon } from 'lucide-react'
 import type { UIDataTypes, UIMessagePart, UITools, UIMessage } from 'ai'
 import { useEffect, useState } from 'react'
 import { useForkSiblings } from '@/hooks/useForkSiblings'
@@ -14,6 +14,7 @@ interface PartProps {
   part: UIMessagePart<UIDataTypes, UITools>
   message: UIMessage
   status: string
+  regen: (id: string) => void
   index: number
   lastMessage: boolean
   isEditing?: boolean
@@ -30,6 +31,7 @@ export function Part({
   part,
   message,
   status,
+  regen,
   index,
   lastMessage,
   isEditing,
@@ -116,6 +118,14 @@ export function Part({
           <Actions className="mt-1">
             <Action
               onClick={() => {
+                regen(message.id)
+              }}
+              label="Retry"
+            >
+              <RefreshCcwIcon className="size-3" />
+            </Action>
+            <Action
+              onClick={() => {
                 copy(part.text)
               }}
               label="Copy"
@@ -200,7 +210,8 @@ function ForkNavigation({
         className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
         disabled={currentIndex === 0}
         onClick={() => {
-          onNavigate(siblings[currentIndex - 1].id)
+          const prev = siblings[currentIndex - 1]
+          if (prev) onNavigate(prev.id)
         }}
         aria-label="Previous fork"
       >
@@ -214,7 +225,8 @@ function ForkNavigation({
         className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
         disabled={currentIndex === total - 1}
         onClick={() => {
-          onNavigate(siblings[currentIndex + 1].id)
+          const next = siblings[currentIndex + 1]
+          if (next) onNavigate(next.id)
         }}
         aria-label="Next fork"
       >
