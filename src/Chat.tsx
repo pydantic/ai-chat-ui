@@ -136,10 +136,6 @@ const Chat = () => {
     return configQuery.data?.builtinTools.filter((tool) => enabledToolIds.includes(tool.id)) ?? []
   }, [configQuery.data, model])
 
-  if (conversationId !== '/' && messages.length === 0) {
-    return null
-  }
-
   return (
     <>
       <Conversation className="h-full">
