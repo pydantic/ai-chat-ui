@@ -29,6 +29,27 @@ uv run uvicorn chatbot.server:app  # Start backend on port 8000
 
 Note: Stop any logfire platform instances to avoid port 8000 conflicts.
 
+**Testing:**
+
+```bash
+pnpm test                # Headless (vitest) + deterministic E2E (playwright)
+pnpm test:headless       # Vitest unit/integration against the FastAPI test server
+pnpm test:e2e            # Deterministic Playwright E2E (no API keys needed)
+pnpm test:e2e:llm        # Live-LLM Playwright E2E (requires provider API keys)
+pnpm test:e2e:ui         # Playwright in UI mode for debugging
+pnpm test:server         # Just the FastAPI test server (port 38787), for iterating manually
+```
+
+Set `E2E_VIDEO=1` to record screen videos with `slowMo`. Set `E2E_TEST_DIR=<path>` to override which directory Playwright walks (defaults to `tests/e2e`; `pnpm test:e2e` narrows it to `tests/e2e/deterministic`).
+
+Test infrastructure lives entirely in `tests/`:
+
+- `tests/server/server.py` — deterministic FastAPI server wired to pydantic-ai's `FunctionModel`. Defines the named model registry (`text`, `tool`, `multi-tool`, `error`, `approval`, plus live `anthropic`/`openai`/`google`) that specs select via `sendMessage(page, '<name>', '...')`.
+- `tests/chat-client.ts`, `tests/global-setup.ts` — Vitest helpers that spawn an ephemeral test server on an OS-assigned port.
+- `tests/e2e/deterministic/*.spec.ts` — Playwright specs run on every PR against `FunctionModel`-backed fixtures.
+- `tests/e2e/llm/llm.spec.ts` — live-provider smoke tests, gated on `workflow_dispatch` in CI.
+- `tests/headless/*.test.ts` — Vitest tests exercising the wire protocol directly via `TestChat` (no browser).
+
 ## Architecture
 
 ### Frontend Structure

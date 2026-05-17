@@ -24,14 +24,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Build
         run: pnpm run build
 
       - name: Typecheck
         run: pnpm run typecheck
 
+      - name: Typecheck tests
+        run: pnpm run typecheck:test
+
       - name: Lint
         run: pnpm run lint
+
+      - name: Headless tests (vitest)
+        run: pnpm run test:headless
 
   e2e:
     name: E2E Tests
@@ -52,11 +61,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
-      - name: Run E2E tests
-        run: pnpm exec playwright test
+      - name: Run deterministic E2E tests
+        run: pnpm run test:e2e
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

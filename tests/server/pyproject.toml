@@ -1,0 +1,13 @@
+[project]
+name = "ai-chat-ui-test-server"
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic-ai-slim[ui]",
+    "uvicorn",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pydantic-ai-slim[anthropic,openai,google]",
+]
