@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import type { ToolUIPart } from 'ai'
+import type { DynamicToolUIPart, ToolUIPart } from 'ai'
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -19,19 +19,20 @@ import { useState, type ComponentProps, type ReactNode } from 'react'
 import { CodeBlock } from './code-block'
 import { getToolIcon } from '@/lib/tool-icons'
 
+export type ToolPart = ToolUIPart | DynamicToolUIPart
+
 export type ToolProps = ComponentProps<typeof Collapsible>
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible className={cn('not-prose mb-4 w-full rounded-md border', className)} {...props} />
 )
 
-export interface ToolHeaderProps {
-  type: ToolUIPart['type']
-  state: ToolUIPart['state']
+export type ToolHeaderProps = {
+  state: ToolPart['state']
   className?: string
-}
+} & ({ type: ToolUIPart['type']; toolName?: never } | { type: 'dynamic-tool'; toolName: string })
 
-const getStatusBadge = (status: ToolUIPart['state']) => {
+const getStatusBadge = (status: ToolPart['state']) => {
   const labels = {
     'input-streaming': 'Pending',
     'input-available': 'Running',
@@ -60,8 +61,8 @@ const getStatusBadge = (status: ToolUIPart['state']) => {
   )
 }
 
-export const ToolHeader = ({ className, type, state, ...props }: ToolHeaderProps) => {
-  const toolId = type.slice(5) // Remove 'tool-' prefix
+export const ToolHeader = ({ className, type, state, toolName, ...props }: ToolHeaderProps) => {
+  const toolId = type === 'dynamic-tool' ? toolName : type.slice(5)
   const toolIcon = getToolIcon(toolId, 'size-4 text-muted-foreground')
 
   return (
@@ -89,7 +90,7 @@ export const ToolContent = ({ className, ...props }: ToolContentProps) => (
 )
 
 export type ToolInputProps = ComponentProps<'div'> & {
-  input: ToolUIPart['input']
+  input: ToolPart['input']
 }
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
@@ -103,7 +104,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
 
 export type ToolOutputProps = ComponentProps<'div'> & {
   output: ReactNode
-  errorText: ToolUIPart['errorText']
+  errorText: ToolPart['errorText']
 }
 
 export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutputProps) => {

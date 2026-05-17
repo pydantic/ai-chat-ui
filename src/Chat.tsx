@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from 'ai'
 import { Settings2Icon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 
@@ -58,7 +59,21 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
+  const modelRef = useRef(model)
+  modelRef.current = model
+  const enabledToolsRef = useRef(enabledTools)
+  enabledToolsRef.current = enabledTools
+
+  const [transport] = useState(
+    () =>
+      new DefaultChatTransport({
+        body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current }),
+      }),
+  )
+  const { messages, sendMessage, status, setMessages, regenerate, error, addToolApprovalResponse } = useChat({
+    transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+  })
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -123,12 +138,7 @@ const Chat = () => {
         window.history.pushState({}, '', theCurrentUrl.toString())
       }
 
-      sendMessage(
-        { text: input },
-        {
-          body: { model, builtinTools: enabledTools },
-        },
-      ).catch((error: unknown) => {
+      sendMessage({ text: input }).catch((error: unknown) => {
         console.error('Error sending message:', error)
       })
       setInput('')
@@ -140,11 +150,9 @@ const Chat = () => {
     if (!pendingSendRef.current) return
     const pending = pendingSendRef.current
     pendingSendRef.current = null
-    sendMessage({ text: pending.text }, { body: { model: pending.model, builtinTools: pending.builtinTools } }).catch(
-      (error: unknown) => {
-        console.error('Error sending deferred message:', error)
-      },
-    )
+    sendMessage({ text: pending.text }).catch((error: unknown) => {
+      console.error('Error sending deferred message:', error)
+    })
   }, [sendTrigger])
 
   useEffect(() => {
@@ -269,6 +277,7 @@ const Chat = () => {
                   index={i}
                   regen={regen}
                   lastMessage={message.id === messages.at(-1)?.id}
+                  onApprovalResponse={addToolApprovalResponse}
                   isEditing={editingMessageId === message.id}
                   editDraft={editDraftsRef.current.get(message.id)}
                   onStartEdit={handleStartEdit}

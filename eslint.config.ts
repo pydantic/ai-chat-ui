@@ -45,6 +45,7 @@ export default defineConfig(
         },
       ],
       '@typescript-eslint/no-non-null-assertion': 'off',
+      'no-void': ['error', { allowAsStatement: true }],
     },
   },
   {
