@@ -15,9 +15,7 @@ import type { ChatAddToolApproveResponseFunction, UIDataTypes, UIMessagePart, UI
 import { useEffect, useState } from 'react'
 import { useForkSiblings } from '@/hooks/useForkSiblings'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
-import { Tool, ToolHeader, ToolInput, ToolOutput, ToolContent } from '@/components/ai-elements/tool'
-import { ToolApprovalPrompt } from '@/components/tool-approval-prompt'
-import { CodeBlock } from '@/components/ai-elements/code-block'
+import { ToolPart } from '@/components/tool-part'
 
 interface PartProps {
   part: UIMessagePart<UIDataTypes, UITools>
@@ -180,43 +178,8 @@ export function Part({
         <ReasoningContent>{part.text}</ReasoningContent>
       </Reasoning>
     )
-  } else if (part.type === 'dynamic-tool') {
-    return (
-      <Tool data-tool-name={part.toolName} defaultOpen={part.state === 'approval-requested'}>
-        <ToolHeader type={part.type} state={part.state} toolName={part.toolName} />
-        <ToolContent>
-          <ToolInput input={part.input} />
-          {'approval' in part && part.approval && (
-            <ToolApprovalPrompt approval={part.approval} state={part.state} onApprovalResponse={onApprovalResponse} />
-          )}
-          {(part.state === 'output-available' || part.state === 'output-error') && (
-            <ToolOutput
-              errorText={part.errorText}
-              output={<CodeBlock code={JSON.stringify(part.output, null, 2)} language="json" />}
-            />
-          )}
-        </ToolContent>
-      </Tool>
-    )
-  } else if ('toolCallId' in part) {
-    const toolId = part.type.split('-').slice(1).join('-')
-    return (
-      <Tool data-tool-name={toolId} defaultOpen={part.state === 'approval-requested'}>
-        <ToolHeader type={part.type} state={part.state} />
-        <ToolContent>
-          <ToolInput input={part.input} />
-          {'approval' in part && part.approval && (
-            <ToolApprovalPrompt approval={part.approval} state={part.state} onApprovalResponse={onApprovalResponse} />
-          )}
-          {(part.state === 'output-available' || part.state === 'output-error') && (
-            <ToolOutput
-              errorText={part.errorText}
-              output={<CodeBlock code={JSON.stringify(part.output, null, 2)} language="json" />}
-            />
-          )}
-        </ToolContent>
-      </Tool>
-    )
+  } else if (part.type === 'dynamic-tool' || 'toolCallId' in part) {
+    return <ToolPart part={part} onApprovalResponse={onApprovalResponse} />
   }
 }
 

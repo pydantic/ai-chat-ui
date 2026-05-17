@@ -7,11 +7,11 @@ import {
   ConfirmationRequest,
   ConfirmationTitle,
 } from '@/components/ai-elements/confirmation'
-import type { ChatAddToolApproveResponseFunction } from 'ai'
+import type { ChatAddToolApproveResponseFunction, ToolUIPart } from 'ai'
 
 interface ToolApprovalPromptProps {
   approval: { id: string }
-  state: 'approval-requested' | 'approval-responded' | 'output-available' | 'output-denied' | 'output-error'
+  state: ToolUIPart['state']
   onApprovalResponse: ChatAddToolApproveResponseFunction
 }
 

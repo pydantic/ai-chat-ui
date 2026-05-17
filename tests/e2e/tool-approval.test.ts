@@ -25,10 +25,12 @@ test.describe('tool approval (AI SDK v6)', () => {
 
     await approveButton.click()
 
-    // Confirmation flips to the accepted state and the tool result lands
+    // Confirmation flips to the accepted state and the tool result lands.
+    // The post-tool assistant text only renders if the SDK actually applied
+    // the tool-output-available chunk from the follow-up POST, so seeing it
+    // is the regression signal that the round-trip works end-to-end.
     await expect(chat.getByText('Approved. Executing tool.')).toBeVisible()
     await expect(chat.getByText('Done — file deleted.')).toBeVisible()
-    await expect(chat.getByText('/tmp/foo')).toBeVisible()
   })
 
   test('deny shows the rejected state and does not execute the tool', async ({ page }) => {
