@@ -1,12 +1,13 @@
 import { CodeBlock } from '@/components/ai-elements/code-block'
 import { useMemo } from 'react'
 
+// Avoid running two Prism highlighters over very large tool payloads.
 const LARGE_TOOL_OUTPUT_LENGTH = 20_000
 
 function stringifyToolOutput(output: unknown): string {
   try {
-    const stringified = JSON.stringify(output, null, 2) as string | undefined
-    return stringified ?? String(output)
+    const stringified: unknown = JSON.stringify(output, null, 2)
+    return typeof stringified === 'string' ? stringified : String(output)
   } catch {
     return String(output)
   }
