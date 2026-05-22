@@ -33,6 +33,29 @@ test.describe('tool approval (AI SDK v6)', () => {
     await expect(chat.getByText('Done — file deleted.')).toBeVisible()
   })
 
+  test('approve shows a large tool result', async ({ page }) => {
+    await setupToolApprovalMocks(page, {
+      toolName: 'read_log',
+      preText: 'Reading the log file.',
+      output: {
+        summary: 'large_result_marker',
+        payload: 'x'.repeat(22_000),
+      },
+      postText: 'Log read complete.',
+    })
+
+    await page.goto('/')
+
+    await page.getByPlaceholder('What would you like to know?').fill('read the log file')
+    await page.getByPlaceholder('What would you like to know?').press('Enter')
+
+    const chat = page.getByRole('log')
+    await chat.getByRole('button', { name: 'Approve' }).click()
+
+    await expect(chat.getByText('large_result_marker')).toBeVisible()
+    await expect(chat.getByText('Log read complete.')).toBeVisible()
+  })
+
   test('deny shows the rejected state and does not execute the tool', async ({ page }) => {
     await setupToolApprovalMocks(page, {
       toolName: 'delete_file',
