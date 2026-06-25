@@ -50,6 +50,13 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Run in the official Playwright image: Chromium and its system deps are
+    # pre-installed, so we skip `playwright install` entirely (it was stalling
+    # for ~1h on the hosted runner's network). The tag is pinned to the
+    # project's Playwright version so the bundled browser matches.
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-jammy
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -68,9 +75,6 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run deterministic E2E tests
         run: pnpm run test:e2e

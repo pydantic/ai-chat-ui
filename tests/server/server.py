@@ -136,7 +136,7 @@ models: dict[str, object] = {
     "approval": FunctionModel(stream_function=stream_approval),
     "anthropic": "anthropic:claude-haiku-4-5",
     "openai": "openai-responses:gpt-4.1-nano",
-    "google": "google-gla:gemini-2.0-flash",
+    "google": "google:gemini-2.0-flash",
 }
 
 SDK_VERSION: Literal[5, 6] = 6
