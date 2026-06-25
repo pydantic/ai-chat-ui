@@ -59,7 +59,11 @@ async function getModels() {
 const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState('')
-  const [effort, setEffort] = useState<string>(() => localStorage.getItem('effort') ?? '')
+  const [effort, setEffort] = useState<string>(() => {
+    const stored = localStorage.getItem('effort')
+    // Empty string was the old "Default" sentinel; migrate it to an explicit level.
+    return stored && stored !== '' ? stored : 'medium'
+  })
   const [enabledTools, setEnabledTools] = useState<string[]>([])
   const modelRef = useRef(model)
   modelRef.current = model

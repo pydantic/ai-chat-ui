@@ -8,7 +8,6 @@ test.describe('effort selector', () => {
       .getByRole('combobox')
       .filter({ hasText: /^Effort:/ })
       .click()
-    await expect(page.getByRole('option', { name: 'Effort: Default' })).toBeVisible()
     await expect(page.getByRole('option', { name: 'Effort: Minimal' })).toBeVisible()
     await expect(page.getByRole('option', { name: 'Effort: Low' })).toBeVisible()
     await expect(page.getByRole('option', { name: 'Effort: Medium' })).toBeVisible()
@@ -36,7 +35,7 @@ test.describe('effort selector', () => {
     await expect(page.getByText('Hello from the test server')).toBeVisible()
   })
 
-  test('default effort sends empty string in the request body', async ({ page }) => {
+  test('default effort is medium and is sent in the request body', async ({ page }) => {
     await page.goto('/')
 
     const requestPromise = page.waitForRequest('**/api/chat')
@@ -44,7 +43,7 @@ test.describe('effort selector', () => {
     const request = await requestPromise
 
     const body = request.postDataJSON() as Record<string, unknown>
-    expect(body.effort).toBe('')
+    expect(body.effort).toBe('medium')
     expect(body.model).toBeTruthy()
 
     await expect(page.getByText('Hello from the test server')).toBeVisible()
