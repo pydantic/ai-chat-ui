@@ -21,7 +21,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from 'ai'
-import { Settings2Icon } from 'lucide-react'
+import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
+import { ArrowRightIcon, RefreshCcwIcon, Settings2Icon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
@@ -74,10 +76,11 @@ const Chat = () => {
         body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current, effort: effortRef.current }),
       }),
   )
-  const { messages, sendMessage, status, setMessages, regenerate, error, addToolApprovalResponse } = useChat({
-    transport,
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
-  })
+  const { messages, sendMessage, status, setMessages, regenerate, error, clearError, addToolApprovalResponse } =
+    useChat({
+      transport,
+      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    })
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -206,6 +209,48 @@ const Chat = () => {
     }, 0)
   }, [pendingEdit, messages, setMessages, model, enabledTools])
 
+  // Retry: re-run the last user message, discarding everything generated after
+  // it (partial assistant text, in-progress tool parts, whole tool-loop turns).
+  const handleRetry = useCallback(() => {
+    let i = messages.length - 1
+    while (i >= 0 && messages[i].role !== 'user') i--
+    if (i === -1) return
+
+    const userMessage = messages[i]
+    const textPart = userMessage.parts.find((p) => p.type === 'text')
+    const text = textPart && 'text' in textPart ? textPart.text : ''
+
+    clearError()
+    pendingSendRef.current = { text, model, builtinTools: enabledTools }
+    // Drop the user message too; the deferred send re-adds it cleanly.
+    setMessages(messages.slice(0, i))
+    setTimeout(() => {
+      setSendTrigger((n) => n + 1)
+    }, 0)
+  }, [messages, clearError, setMessages, model, enabledTools])
+
+  // Continue: append a `continue` user message to a valid history. If the run
+  // errored mid-tool-call, the trailing assistant message may hold a tool part
+  // with no output; pydantic-ai rejects an orphaned tool call, so drop that
+  // trailing assistant message first.
+  const handleContinue = useCallback(() => {
+    const lastMessage = messages.at(-1)
+    if (lastMessage?.role === 'assistant' && hasIncompleteToolPart(lastMessage.parts)) {
+      clearError()
+      pendingSendRef.current = { text: 'continue', model, builtinTools: enabledTools }
+      setMessages(messages.slice(0, -1))
+      setTimeout(() => {
+        setSendTrigger((n) => n + 1)
+      }, 0)
+      return
+    }
+
+    clearError()
+    sendMessage({ text: 'continue' }).catch((error: unknown) => {
+      console.error('Error continuing message:', error)
+    })
+  }, [messages, clearError, setMessages, sendMessage, model, enabledTools])
+
   const handleFork = useCallback(() => {
     if (!pendingEdit) return
     if (conversationId === '/') return
@@ -297,7 +342,19 @@ const Chat = () => {
           {status === 'submitted' && <Loader />}
           {status === 'error' && error && (
             <div className="px-4 py-3 mx-4 my-2 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
-              <strong>Error:</strong> {error.message}
+              <div>
+                <strong>Error:</strong> {error.message}
+              </div>
+              <div className="flex gap-2 mt-3">
+                <Button variant="outline" size="sm" onClick={handleRetry}>
+                  <RefreshCcwIcon className="size-4" />
+                  Retry
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleContinue}>
+                  <ArrowRightIcon className="size-4" />
+                  Continue
+                </Button>
+              </div>
             </div>
           )}
         </ConversationContent>
@@ -404,6 +461,16 @@ const Chat = () => {
 }
 
 export default Chat
+
+// A tool part whose state is not one of these has no output (or denial) yet, so
+// continuing would leave the backend with an orphaned tool call.
+const COMPLETE_TOOL_STATES = new Set(['output-available', 'output-error', 'output-denied'])
+
+function hasIncompleteToolPart(parts: UIMessagePart<UIDataTypes, UITools>[]): boolean {
+  return parts.some(
+    (part) => (part.type === 'dynamic-tool' || 'toolCallId' in part) && !COMPLETE_TOOL_STATES.has(part.state),
+  )
+}
 
 const MAX_FIRST_MESSAGE_LENGTH = 30
 
