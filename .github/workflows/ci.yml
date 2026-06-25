@@ -46,6 +46,12 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Run in the official Playwright image: Chromium and its system deps are
+    # pre-installed, so we skip `playwright install` entirely (it was stalling
+    # for ~1h on the hosted runner's network). The tag is pinned to the
+    # project's Playwright version so the bundled browser matches.
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-jammy
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -64,30 +70,6 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
-
-      - name: Resolve Playwright version
-        id: playwright
-        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-
-      - name: Install Playwright browsers
-        # The install occasionally stalls after the browser download (transient
-        # runner network/disk hang). Cap each attempt and retry so a stall fails
-        # fast instead of running to the job limit; a cache hit skips the download.
-        run: |
-          for attempt in 1 2 3; do
-            if timeout 8m pnpm exec playwright install chromium --with-deps; then
-              exit 0
-            fi
-            echo "::warning::playwright install attempt $attempt stalled or failed; retrying"
-          done
-          echo "::error::playwright install failed after 3 attempts"
-          exit 1
 
       - name: Run deterministic E2E tests
         run: pnpm run test:e2e
