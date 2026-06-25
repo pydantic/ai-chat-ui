@@ -8,7 +8,6 @@ import {
 import { THINKING_EFFORT_LEVELS, type ThinkingEffort } from '@/lib/generated/thinking-effort.gen'
 
 interface EffortOption {
-  value: string
   label: string
   selectValue: string
 }
@@ -26,9 +25,8 @@ const EFFORT_LABELS: Record<ThinkingEffort, string> = {
 }
 
 const EFFORT_OPTIONS: EffortOption[] = [
-  { value: '', label: 'Effort: Default', selectValue: 'default' },
+  { label: 'Effort: Default', selectValue: 'default' },
   ...THINKING_EFFORT_LEVELS.map((level) => ({
-    value: level,
     label: `Effort: ${EFFORT_LABELS[level]}`,
     selectValue: level,
   })),
