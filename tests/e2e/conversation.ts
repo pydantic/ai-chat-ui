@@ -5,7 +5,10 @@ export function chat(page: Page): Locator {
 }
 
 export async function sendMessage(page: Page, model: string, message: string) {
-  await page.getByRole('combobox').click()
+  await page
+    .getByRole('combobox')
+    .filter({ hasNotText: /^Effort:/ })
+    .click()
   await page.getByRole('option', { name: model, exact: true }).click()
   const input = page.getByPlaceholder('What would you like to know?')
   await input.fill(message)

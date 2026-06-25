@@ -14,6 +14,7 @@ import {
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
+import { EffortSelect } from '@/components/effort-select'
 import { EditMessageDialog } from '@/components/edit-message-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -58,16 +59,19 @@ async function getModels() {
 const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState('')
+  const [effort, setEffort] = useState<string>(() => localStorage.getItem('effort') ?? '')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
   const modelRef = useRef(model)
   modelRef.current = model
+  const effortRef = useRef(effort)
+  effortRef.current = effort
   const enabledToolsRef = useRef(enabledTools)
   enabledToolsRef.current = enabledTools
 
   const [transport] = useState(
     () =>
       new DefaultChatTransport({
-        body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current }),
+        body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current, effort: effortRef.current }),
       }),
   )
   const { messages, sendMessage, status, setMessages, regenerate, error, addToolApprovalResponse } = useChat({
@@ -374,6 +378,13 @@ const Chat = () => {
                   </PromptInputModelSelectContent>
                 </PromptInputModelSelect>
               )}
+              <EffortSelect
+                value={effort}
+                onValueChange={(v) => {
+                  setEffort(v)
+                  localStorage.setItem('effort', v)
+                }}
+              />
             </PromptInputTools>
             <PromptInputSubmit disabled={!input} status={status} />
           </PromptInputToolbar>
