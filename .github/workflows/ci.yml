@@ -27,6 +27,11 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Check generated constants are in sync with pydantic-ai
+        run: |
+          pnpm run gen:constants
+          git diff --exit-code src/lib/generated/
+
       - name: Build
         run: pnpm run build
 

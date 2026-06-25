@@ -20,6 +20,7 @@
     "lint-fix": "eslint --fix --quiet",
     "dev": "BACKEND_PORT=38001 vite",
     "dev:server": "cd agent && uv run uvicorn chatbot.server:app --port 38001",
+    "gen:constants": "cd agent && uv run python scripts/gen_constants.py",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "pnpm test:headless && pnpm test:e2e",

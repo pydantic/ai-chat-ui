@@ -5,6 +5,7 @@ import {
   PromptInputModelSelectTrigger,
   PromptInputModelSelectValue,
 } from '@/components/ai-elements/prompt-input'
+import { THINKING_EFFORT_LEVELS, type ThinkingEffort } from '@/lib/generated/thinking-effort.gen'
 
 interface EffortOption {
   value: string
@@ -12,13 +13,25 @@ interface EffortOption {
   selectValue: string
 }
 
+// Display labels are a UI concern and stay here; the levels come from
+// pydantic-ai via the generated module. The Record is exhaustive over
+// ThinkingEffort, so adding a level upstream forces a label here (or fails to
+// compile) rather than silently dropping it from the dropdown.
+const EFFORT_LABELS: Record<ThinkingEffort, string> = {
+  minimal: 'Minimal',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  xhigh: 'X-High',
+}
+
 const EFFORT_OPTIONS: EffortOption[] = [
   { value: '', label: 'Effort: Default', selectValue: 'default' },
-  { value: 'minimal', label: 'Effort: Minimal', selectValue: 'minimal' },
-  { value: 'low', label: 'Effort: Low', selectValue: 'low' },
-  { value: 'medium', label: 'Effort: Medium', selectValue: 'medium' },
-  { value: 'high', label: 'Effort: High', selectValue: 'high' },
-  { value: 'xhigh', label: 'Effort: X-High', selectValue: 'xhigh' },
+  ...THINKING_EFFORT_LEVELS.map((level) => ({
+    value: level,
+    label: `Effort: ${EFFORT_LABELS[level]}`,
+    selectValue: level,
+  })),
 ]
 
 interface EffortSelectProps {
