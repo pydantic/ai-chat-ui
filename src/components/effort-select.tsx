@@ -25,7 +25,6 @@ const EFFORT_LABELS: Record<ThinkingEffort, string> = {
 }
 
 const EFFORT_OPTIONS: EffortOption[] = [
-  { label: 'Effort: Default', selectValue: 'default' },
   ...THINKING_EFFORT_LEVELS.map((level) => ({
     label: `Effort: ${EFFORT_LABELS[level]}`,
     selectValue: level,
@@ -38,15 +37,8 @@ interface EffortSelectProps {
 }
 
 export const EffortSelect = ({ value, onValueChange }: EffortSelectProps) => {
-  const selectValue = value === '' ? 'default' : value
-
   return (
-    <PromptInputModelSelect
-      value={selectValue}
-      onValueChange={(v) => {
-        onValueChange(v === 'default' ? '' : v)
-      }}
-    >
+    <PromptInputModelSelect value={value} onValueChange={onValueChange}>
       <PromptInputModelSelectTrigger>
         <PromptInputModelSelectValue />
       </PromptInputModelSelectTrigger>
