@@ -16,15 +16,18 @@ import {
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { EffortSelect } from '@/components/effort-select'
 import { EditMessageDialog } from '@/components/edit-message-dialog'
+import { HiddenToolsGroup } from '@/components/hidden-tools-group'
+import { ToolFiltersDialog } from '@/components/tool-filters-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
+import { ToolFiltersProvider, useToolFilters } from '@/contexts/tool-filters'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from 'ai'
-import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
-import { ArrowRightIcon, RefreshCcwIcon, Settings2Icon } from 'lucide-react'
+import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
+import { ArrowRightIcon, FilterIcon, RefreshCcwIcon, Settings2Icon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
@@ -33,6 +36,7 @@ import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
+import { toolNameOfPart } from '@/lib/tool-filters'
 import { getMessages, saveMessages, saveConversation } from '@/lib/chat-db'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 
@@ -58,7 +62,9 @@ async function getModels() {
   return (await res.json()) as RemoteConfig
 }
 
-const Chat = () => {
+const ChatInner = () => {
+  const { isFiltered } = useToolFilters()
+  const [filtersDialogOpen, setFiltersDialogOpen] = useState(false)
   const [input, setInput] = useState('')
   const [model, setModel] = useState('')
   const [effort, setEffort] = useState<string>(() => {
@@ -321,26 +327,30 @@ const Chat = () => {
                       ))}
                   </Sources>
                 )}
-              {message.parts.map((part, i) => (
-                <Part
-                  key={`${message.id}-${i}`}
-                  part={part}
-                  message={message}
-                  status={status}
-                  index={i}
-                  regen={regen}
-                  lastMessage={message.id === messages.at(-1)?.id}
-                  onApprovalResponse={addToolApprovalResponse}
-                  isEditing={editingMessageId === message.id}
-                  editDraft={editDraftsRef.current.get(message.id)}
-                  onStartEdit={handleStartEdit}
-                  onCancelEdit={handleCancelEdit}
-                  onSubmitEdit={handleSubmitEdit}
-                  conversationId={conversationId}
-                  messageIndex={messageIndex}
-                  onNavigateToFork={handleNavigateToFork}
-                />
-              ))}
+              {renderMessageParts(
+                message,
+                (part, i) => (
+                  <Part
+                    key={`${message.id}-${i}`}
+                    part={part}
+                    message={message}
+                    status={status}
+                    index={i}
+                    regen={regen}
+                    lastMessage={message.id === messages.at(-1)?.id}
+                    onApprovalResponse={addToolApprovalResponse}
+                    isEditing={editingMessageId === message.id}
+                    editDraft={editDraftsRef.current.get(message.id)}
+                    onStartEdit={handleStartEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onSubmitEdit={handleSubmitEdit}
+                    conversationId={conversationId}
+                    messageIndex={messageIndex}
+                    onNavigateToFork={handleNavigateToFork}
+                  />
+                ),
+                isFiltered,
+              )}
             </div>
           ))}
           {status === 'submitted' && <Loader />}
@@ -377,6 +387,20 @@ const Chat = () => {
           />
           <PromptInputToolbar>
             <PromptInputTools>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PromptInputButton
+                    variant="outline"
+                    aria-label="Hidden tools"
+                    onClick={() => {
+                      setFiltersDialogOpen(true)
+                    }}
+                  >
+                    <FilterIcon className="size-4" />
+                  </PromptInputButton>
+                </TooltipTrigger>
+                <TooltipContent>Hidden tools</TooltipContent>
+              </Tooltip>
               {availableTools.length > 0 && (
                 <DropdownMenu>
                   <Tooltip>
@@ -460,11 +484,57 @@ const Chat = () => {
         onModify={handleModify}
         onFork={handleFork}
       />
+
+      <ToolFiltersDialog open={filtersDialogOpen} onOpenChange={setFiltersDialogOpen} />
     </>
   )
 }
 
+const Chat = () => (
+  // Upstream default is an empty filter list. A host (e.g. loopy) seeds its own
+  // noisy tool names by passing `defaults={[...]}` here.
+  <ToolFiltersProvider defaults={[]}>
+    <ChatInner />
+  </ToolFiltersProvider>
+)
+
 export default Chat
+
+// Walk a message's parts and render them, collapsing runs of consecutive
+// filtered tool parts into a single `HiddenToolsGroup`. `renderPart` is the
+// per-part renderer (returns a `<Part>` element); grouping is message-level so
+// it lives here rather than in `Part`. Non-filtered parts render unchanged.
+function renderMessageParts(
+  message: UIMessage,
+  renderPart: (part: UIMessagePart<UIDataTypes, UITools>, index: number) => ReactNode,
+  isFiltered: (toolName: string) => boolean,
+): ReactNode[] {
+  const out: ReactNode[] = []
+  let run: { node: ReactNode; toolName: string }[] = []
+
+  const flush = () => {
+    if (run.length === 0) return
+    out.push(
+      <HiddenToolsGroup key={`hidden-${message.id}-${out.length}`} toolNames={run.map((entry) => entry.toolName)}>
+        {run.map((entry) => entry.node)}
+      </HiddenToolsGroup>,
+    )
+    run = []
+  }
+
+  message.parts.forEach((part, i) => {
+    const toolName = toolNameOfPart(part)
+    if (toolName !== null && isFiltered(toolName)) {
+      run.push({ node: renderPart(part, i), toolName })
+    } else {
+      flush()
+      out.push(renderPart(part, i))
+    }
+  })
+  flush()
+
+  return out
+}
 
 // A tool part whose state is not one of these has no output (or denial) yet, so
 // continuing would leave the backend with an orphaned tool call.
