@@ -1,3 +1,5 @@
+pnpm run gen:constants
+git diff --exit-code src/lib/generated/
 pnpm exec lint-staged
 pnpm run typecheck
 pnpm run test

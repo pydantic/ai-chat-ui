@@ -20,11 +20,16 @@
     "lint-fix": "eslint --fix --quiet",
     "dev": "BACKEND_PORT=38001 vite",
     "dev:server": "cd agent && uv run uvicorn chatbot.server:app --port 38001",
+    "gen:constants": "cd agent && uv run python scripts/gen_constants.py",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:chrome": "playwright test --headed --project=chromium"
+    "test": "pnpm test:headless && pnpm test:e2e",
+    "test:headless": "vitest run --config vitest.config.ts",
+    "test:e2e": "E2E_TEST_DIR=tests/e2e/deterministic playwright test",
+    "test:e2e:llm": "E2E_TEST_DIR=tests/e2e/llm playwright test",
+    "test:e2e:ui": "E2E_TEST_DIR=tests/e2e/deterministic playwright test --ui",
+    "test:server": "cd tests/server && uv run uvicorn server:app --host 127.0.0.1 --port 38787",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },
   "files": [
     "dist"
@@ -100,6 +105,7 @@
     "vite": "^7.3.1",
     "vite-bundle-analyzer": "^1.3.2",
     "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.6",
     "yaml-lint": "^1.7.0"
   }
 }

@@ -127,6 +127,14 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Tailwind v4's preflight dropped the UA pointer cursor on `button`, and the
+     vendored shadcn/Radix controls never re-added it, so most clickable
+     controls showed an arrow. Restore it for enabled buttons and role=button. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
 }
 
 @utility custom-scrollbar {
