@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupParts, type PartDescriptor } from '../../src/lib/tool-grouping'
+import { groupParts, splitStates, type PartDescriptor } from '../../src/lib/tool-grouping'
 
 const tool = (name: string): PartDescriptor => ({ toolName: name, filtered: false })
 const hidden = (name: string): PartDescriptor => ({ toolName: name, filtered: true })
@@ -55,5 +55,23 @@ describe('groupParts', () => {
 
   it('returns an empty list for no parts', () => {
     expect(groupParts([])).toEqual([])
+  })
+})
+
+describe('splitStates', () => {
+  it('counts every terminal state as done -> running 0 (group collapses by default)', () => {
+    expect(splitStates(['output-available', 'output-error', 'output-denied'])).toEqual({ done: 3, running: 0 })
+  })
+
+  it('counts approval-requested as running -> running > 0 (group expands by default)', () => {
+    expect(splitStates(['approval-requested', 'output-available'])).toEqual({ done: 1, running: 1 })
+  })
+
+  it('counts pre-terminal states (input-streaming, input-available) as running', () => {
+    expect(splitStates(['input-streaming', 'input-available'])).toEqual({ done: 0, running: 2 })
+  })
+
+  it('returns zero counts for no states', () => {
+    expect(splitStates([])).toEqual({ done: 0, running: 0 })
   })
 })

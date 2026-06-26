@@ -38,7 +38,7 @@ import { Part } from './Part'
 import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
 import { toolNameOfPart } from '@/lib/tool-filters'
-import { groupParts } from '@/lib/tool-grouping'
+import { COMPLETE_TOOL_STATES, groupParts } from '@/lib/tool-grouping'
 import { getMessages, saveMessages, saveConversation } from '@/lib/chat-db'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 
@@ -550,10 +550,8 @@ function partState(part: UIMessagePart<UIDataTypes, UITools>): string {
   return 'state' in part && typeof part.state === 'string' ? part.state : ''
 }
 
-// A tool part whose state is not one of these has no output (or denial) yet, so
-// continuing would leave the backend with an orphaned tool call.
-const COMPLETE_TOOL_STATES = new Set(['output-available', 'output-error', 'output-denied'])
-
+// A tool part whose state is not in `COMPLETE_TOOL_STATES` has no output (or
+// denial) yet, so continuing would leave the backend with an orphaned tool call.
 function hasIncompleteToolPart(parts: UIMessagePart<UIDataTypes, UITools>[]): boolean {
   return parts.some(
     (part) => (part.type === 'dynamic-tool' || 'toolCallId' in part) && !COMPLETE_TOOL_STATES.has(part.state),

@@ -1,3 +1,4 @@
+import { splitStates } from '@/lib/tool-grouping'
 import { getToolIcon } from '@/lib/tool-icons'
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -8,22 +9,23 @@ interface ToolCallGroupProps {
   children: ReactNode
 }
 
-// A call is done once it has a terminal result (output, error, or denial);
-// anything earlier (streaming input, awaiting approval) is still running.
-const DONE_STATES = new Set(['output-available', 'output-error', 'output-denied'])
-
 /**
  * Collapse a run of consecutive calls to the same tool into a single line.
  * Collapsed, it shows the tool icon, name, an `xN` count, and -- while any call
  * is still running -- a "D done / R running" progress affordance. Expanded, it
  * reveals the individual tool cards (`children`) inline. Mirrors the look of
  * `HiddenToolsGroup`.
+ *
+ * The group defaults to expanded while any call is still running (incl.
+ * `approval-requested`) so live output and approval prompts stay visible, then
+ * collapses once every call is done. The user can override either way via the
+ * toggle.
  */
 export function ToolCallGroup({ toolName, states, children }: ToolCallGroupProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [override, setOverride] = useState<boolean | null>(null)
   const count = states.length
-  const done = states.filter((state) => DONE_STATES.has(state)).length
-  const running = count - done
+  const { done, running } = splitStates(states)
+  const expanded = override ?? running > 0
 
   const progress = running > 0 ? `${done} done / ${running} running` : 'done'
 
@@ -31,7 +33,7 @@ export function ToolCallGroup({ toolName, states, children }: ToolCallGroupProps
     <button
       type="button"
       onClick={() => {
-        setExpanded((prev) => !prev)
+        setOverride(!expanded)
       }}
       className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
     >

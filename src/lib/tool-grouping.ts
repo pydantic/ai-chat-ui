@@ -8,6 +8,23 @@ export interface PartDescriptor {
   filtered: boolean
 }
 
+// A tool call is done once it has a terminal result (output, error, or denial).
+// Anything earlier -- streaming input, `input-available`, `approval-requested`
+// -- is still running. Shared by `ToolCallGroup` (default-expand while running)
+// and `hasIncompleteToolPart` in `Chat.tsx`, which must agree on what "done"
+// means so they cannot drift.
+export const COMPLETE_TOOL_STATES = new Set(['output-available', 'output-error', 'output-denied'])
+
+/**
+ * Split a run's per-call states into done vs. still-running counts. A call is
+ * `done` only at a terminal state in `COMPLETE_TOOL_STATES`; `approval-requested`
+ * counts as running so the group stays expanded while approval is pending.
+ */
+export function splitStates(states: string[]): { done: number; running: number } {
+  const done = states.filter((state) => COMPLETE_TOOL_STATES.has(state)).length
+  return { done, running: states.length - done }
+}
+
 /**
  * A run of consecutive parts to render together.
  *
