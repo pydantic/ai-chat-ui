@@ -17,6 +17,7 @@ import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai
 import { EffortSelect } from '@/components/effort-select'
 import { EditMessageDialog } from '@/components/edit-message-dialog'
 import { HiddenToolsGroup } from '@/components/hidden-tools-group'
+import { ToolCallGroup } from '@/components/tool-call-group'
 import { ToolFiltersDialog } from '@/components/tool-filters-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -37,6 +38,7 @@ import { Part } from './Part'
 import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
 import { toolNameOfPart } from '@/lib/tool-filters'
+import { groupParts } from '@/lib/tool-grouping'
 import { getMessages, saveMessages, saveConversation } from '@/lib/chat-db'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 
@@ -500,40 +502,52 @@ const Chat = () => (
 
 export default Chat
 
-// Walk a message's parts and render them, collapsing runs of consecutive
-// filtered tool parts into a single `HiddenToolsGroup`. `renderPart` is the
-// per-part renderer (returns a `<Part>` element); grouping is message-level so
-// it lives here rather than in `Part`. Non-filtered parts render unchanged.
+// Walk a message's parts and render them, collapsing two kinds of consecutive
+// runs into a single element: filtered tool parts into a `HiddenToolsGroup`, and
+// runs of >=2 calls to the same (non-filtered) tool into a `ToolCallGroup`.
+// `renderPart` is the per-part renderer (returns a `<Part>` element); grouping
+// is message-level so it lives here rather than in `Part`. Lone calls and
+// non-tool parts render unchanged.
 function renderMessageParts(
   message: UIMessage,
   renderPart: (part: UIMessagePart<UIDataTypes, UITools>, index: number) => ReactNode,
   isFiltered: (toolName: string) => boolean,
 ): ReactNode[] {
-  const out: ReactNode[] = []
-  let run: { node: ReactNode; toolName: string }[] = []
-
-  const flush = () => {
-    if (run.length === 0) return
-    out.push(
-      <HiddenToolsGroup key={`hidden-${message.id}-${out.length}`} toolNames={run.map((entry) => entry.toolName)}>
-        {run.map((entry) => entry.node)}
-      </HiddenToolsGroup>,
-    )
-    run = []
-  }
-
-  message.parts.forEach((part, i) => {
+  const descriptors = message.parts.map((part) => {
     const toolName = toolNameOfPart(part)
-    if (toolName !== null && isFiltered(toolName)) {
-      run.push({ node: renderPart(part, i), toolName })
-    } else {
-      flush()
-      out.push(renderPart(part, i))
-    }
+    return { toolName, filtered: toolName !== null && isFiltered(toolName) }
   })
-  flush()
 
-  return out
+  return groupParts(descriptors).map((run) => {
+    if (run.kind === 'single') {
+      return renderPart(message.parts[run.index], run.index)
+    }
+    if (run.kind === 'hidden') {
+      return (
+        <HiddenToolsGroup
+          key={`hidden-${message.id}-${run.indices[0]}`}
+          toolNames={run.indices.map((i) => toolNameOfPart(message.parts[i]) ?? '')}
+        >
+          {run.indices.map((i) => renderPart(message.parts[i], i))}
+        </HiddenToolsGroup>
+      )
+    }
+    return (
+      <ToolCallGroup
+        key={`tool-group-${message.id}-${run.indices[0]}`}
+        toolName={run.toolName}
+        states={run.indices.map((i) => partState(message.parts[i]))}
+      >
+        {run.indices.map((i) => renderPart(message.parts[i], i))}
+      </ToolCallGroup>
+    )
+  })
+}
+
+// A tool part's lifecycle state (e.g. `output-available`). Non-tool parts have
+// no state; the grouping pass never asks for theirs.
+function partState(part: UIMessagePart<UIDataTypes, UITools>): string {
+  return 'state' in part && typeof part.state === 'string' ? part.state : ''
 }
 
 // A tool part whose state is not one of these has no output (or denial) yet, so
