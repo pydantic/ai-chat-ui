@@ -388,7 +388,7 @@ const ChatInner = () => {
             autoFocus={true}
           />
           <PromptInputToolbar>
-            <PromptInputTools>
+            <PromptInputTools className="min-w-0 flex-wrap">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <PromptInputButton
@@ -473,7 +473,7 @@ const ChatInner = () => {
                 }}
               />
             </PromptInputTools>
-            <PromptInputSubmit disabled={!input} status={status} />
+            <PromptInputSubmit className="shrink-0 self-end" disabled={!input} status={status} />
           </PromptInputToolbar>
         </PromptInput>
       </div>
