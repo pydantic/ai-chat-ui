@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Chat from './Chat.tsx'
 import { AppSidebar } from './components/app-sidebar.tsx'
+import { MobileHeader } from './components/mobile-header.tsx'
 import { ThemeProvider } from './components/theme-provider.tsx'
 import { SidebarProvider } from './components/ui/sidebar.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
@@ -35,14 +36,17 @@ export default function App() {
         <SidebarProvider defaultOpen>
           <AppSidebar />
 
-          <div className="flex flex-col justify-center flex-1 h-screen overflow-hidden">
-            <div
-              className={cn(
-                'flex flex-col max-w-4xl mx-auto relative w-full basis-[100vh] overflow-hidden',
-                'has-[.stick-to-bottom:empty]:overflow-visible has-[.stick-to-bottom:empty]:basis-[0px] transition-[flex-basis] duration-200',
-              )}
-            >
-              {ready && <Chat />}
+          <div className="flex flex-col flex-1 h-dvh overflow-hidden">
+            <MobileHeader />
+            <div className="flex flex-col justify-center flex-1 min-h-0">
+              <div
+                className={cn(
+                  'flex flex-col max-w-4xl mx-auto relative w-full basis-[100dvh] overflow-hidden',
+                  'has-[.stick-to-bottom:empty]:overflow-visible has-[.stick-to-bottom:empty]:basis-[0px] transition-[flex-basis] duration-200',
+                )}
+              >
+                {ready && <Chat />}
+              </div>
             </div>
           </div>
         </SidebarProvider>
