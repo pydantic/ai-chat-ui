@@ -26,7 +26,7 @@ const EFFORT_LABELS: Record<ThinkingEffort, string> = {
 
 const EFFORT_OPTIONS: EffortOption[] = [
   ...THINKING_EFFORT_LEVELS.map((level) => ({
-    label: `Effort: ${EFFORT_LABELS[level]}`,
+    label: EFFORT_LABELS[level],
     selectValue: level,
   })),
 ]
@@ -39,12 +39,14 @@ interface EffortSelectProps {
 export const EffortSelect = ({ value, onValueChange }: EffortSelectProps) => {
   return (
     <PromptInputModelSelect value={value} onValueChange={onValueChange}>
-      <PromptInputModelSelectTrigger>
+      <PromptInputModelSelectTrigger className="shrink-0">
         <PromptInputModelSelectValue />
       </PromptInputModelSelectTrigger>
       <PromptInputModelSelectContent>
         {EFFORT_OPTIONS.map((opt) => (
           <PromptInputModelSelectItem key={opt.selectValue} value={opt.selectValue}>
+            {/* The prefix is dropped on narrow screens so the toolbar fits on one row. */}
+            <span className="hidden sm:inline">Effort: </span>
             {opt.label}
           </PromptInputModelSelectItem>
         ))}
