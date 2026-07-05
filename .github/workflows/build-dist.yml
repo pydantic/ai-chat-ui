@@ -1,6 +1,8 @@
 name: Build dist artifact
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [mobile-friendly-layout-build]
 
 jobs:
   build:
