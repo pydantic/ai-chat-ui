@@ -41,5 +41,9 @@ jobs:
 
       - name: Release
         env:
+          # Skip husky hooks: @semantic-release/git commits CHANGELOG.md + package.json,
+          # which would otherwise fire the pre-commit hook (gen:constants needs `uv`, plus
+          # typecheck/test) and fail on the Node-only release runner.
+          HUSKY: 0
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
