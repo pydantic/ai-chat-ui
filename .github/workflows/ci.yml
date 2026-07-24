@@ -79,6 +79,11 @@ jobs:
       - name: Run deterministic E2E tests
         run: pnpm run test:e2e
 
+      # Builds the single-file artifact and asserts it renders with every external
+      # request blocked -- the regression guard for the CDN base leaking back in.
+      - name: Run offline artifact E2E test
+        run: pnpm run test:e2e:offline
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
