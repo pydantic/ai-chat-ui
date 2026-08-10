@@ -73,6 +73,15 @@ async def stream_text(
     yield "Hello from the test server!"
 
 
+async def stream_markdown(
+    messages: list[ModelMessage], info: AgentInfo
+) -> AsyncIterator[str]:
+    """Markdown exercising the two lazily-loaded renderers: a fenced code block pulls a
+    shiki language grammar via dynamic import, and math pulls the KaTeX fonts. The offline
+    single-file artifact must render both with no network access."""
+    yield "Fenced code block:\n\n```python\ndef greet():\n    return 'offline'\n```\n\nAnd math:\n\n$$\nE = mc^2\n$$\n"
+
+
 async def stream_tool(
     messages: list[ModelMessage], info: AgentInfo
 ) -> AsyncIterator[str | dict[int, DeltaToolCall]]:
@@ -196,6 +205,7 @@ async def stream_repeated_approval(
 
 models: dict[str, object] = {
     "text": FunctionModel(stream_function=stream_text),
+    "markdown": FunctionModel(stream_function=stream_markdown),
     "tool": FunctionModel(stream_function=stream_tool),
     "multi-tool": FunctionModel(stream_function=stream_multi_tool),
     "repeated-tool": FunctionModel(stream_function=stream_repeated_tool),

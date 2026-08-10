@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/pydantic/ai-chat-ui/compare/v2.0.0...v2.1.0) (2026-08-10)
+
+
+### Features
+
+* add offline single-file build for self-hosting ([#42](https://github.com/pydantic/ai-chat-ui/issues/42)) ([99bc204](https://github.com/pydantic/ai-chat-ui/commit/99bc204dddd1d5b3f552083a735b6c7f4382980a))
+
 # [2.0.0](https://github.com/pydantic/ai-chat-ui/compare/v1.2.0...v2.0.0) (2026-07-06)
 
 

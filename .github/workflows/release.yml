@@ -36,6 +36,11 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # Ships offline/index.html in the tarball, so it is fetchable from
+      # https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui/offline/index.html
+      - name: Build offline artifact
+        run: pnpm run build:offline
+
       - name: Verify npm signatures
         run: npm audit signatures
 
