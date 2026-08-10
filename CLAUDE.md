@@ -14,6 +14,7 @@ A React-based chat interface for Pydantic AI that uses Vercel AI SDK and Element
 npm install
 npm run dev              # Start dev server (proxies /api to localhost:8000)
 npm run build            # Build for production (CDN deployment via jsdelivr)
+npm run build:offline    # Build offline/index.html, one self-contained file for air-gapped hosting
 npm run typecheck        # Type check without emitting
 npm run lint             # Run ESLint
 npm run lint-fix         # Fix ESLint issues
@@ -37,16 +38,18 @@ pnpm test:headless       # Vitest unit/integration against the FastAPI test serv
 pnpm test:e2e            # Deterministic Playwright E2E (no API keys needed)
 pnpm test:e2e:llm        # Live-LLM Playwright E2E (requires provider API keys)
 pnpm test:e2e:ui         # Playwright in UI mode for debugging
+pnpm test:e2e:offline    # Build the offline artifact and assert it renders with the network blocked
 pnpm test:server         # Just the FastAPI test server (port 38787), for iterating manually
 ```
 
-Set `E2E_VIDEO=1` to record screen videos with `slowMo`. Set `E2E_TEST_DIR=<path>` to override which directory Playwright walks (defaults to `tests/e2e`; `pnpm test:e2e` narrows it to `tests/e2e/deterministic`).
+Set `E2E_VIDEO=1` to record screen videos with `slowMo`. Set `E2E_TEST_DIR=<path>` to override which directory Playwright walks (defaults to `tests/e2e`; `pnpm test:e2e` narrows it to `tests/e2e/deterministic`). The offline suite ignores `E2E_TEST_DIR` — it runs off its own `playwright.offline.config.ts`, which serves the built artifact with `vite preview` instead of the dev server.
 
 Test infrastructure lives entirely in `tests/`:
 
-- `tests/server/server.py` — deterministic FastAPI server wired to pydantic-ai's `FunctionModel`. Defines the named model registry (`text`, `tool`, `multi-tool`, `error`, `approval`, plus live `anthropic`/`openai`/`google`) that specs select via `sendMessage(page, '<name>', '...')`.
+- `tests/server/server.py` — deterministic FastAPI server wired to pydantic-ai's `FunctionModel`. Defines the named model registry (`text`, `markdown`, `tool`, `multi-tool`, `repeated-tool`, `error`, `approval`, plus live `anthropic`/`openai`/`google`) that specs select via `sendMessage(page, '<name>', '...')`.
 - `tests/chat-client.ts`, `tests/global-setup.ts` — Vitest helpers that spawn an ephemeral test server on an OS-assigned port.
 - `tests/e2e/deterministic/*.spec.ts` — Playwright specs run on every PR against `FunctionModel`-backed fixtures.
+- `tests/e2e/offline/*.spec.ts` — Playwright specs against the built `offline/index.html` with every non-loopback request aborted, so an asset that stops being inlined fails the run instead of being quietly served by the real CDN.
 - `tests/e2e/llm/llm.spec.ts` — live-provider smoke tests, gated on `workflow_dispatch` in CI.
 - `tests/headless/*.test.ts` — Vitest tests exercising the wire protocol directly via `TestChat` (no browser).
 

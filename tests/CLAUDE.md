@@ -2,7 +2,7 @@
 
 ## Paradigm: server-driven, no `page.route` mocks
 
-All deterministic tests drive the real FastAPI server at `tests/server/server.py`, which uses pydantic-ai's `FunctionModel` to return predictable streams. The named entries in `models` (`text`, `tool`, `multi-tool`, `error`, `approval`) are the test fixtures — a spec picks one via `sendMessage(page, '<name>', '<message>')`.
+All deterministic tests drive the real FastAPI server at `tests/server/server.py`, which uses pydantic-ai's `FunctionModel` to return predictable streams. The named entries in `models` (`text`, `markdown`, `tool`, `multi-tool`, `repeated-tool`, `error`, `approval`) are the test fixtures — a spec picks one via `sendMessage(page, '<name>', '<message>')`.
 
 When you need new behavior, add a `FunctionModel` to the server's `models` dict and select it from the spec. **Do not** introduce `page.route` mocks — they duplicated the SSE wire format and drifted on the SDK v5→v6 bump, which is why we switched.
 
@@ -28,6 +28,7 @@ When you need new behavior, add a `FunctionModel` to the server's `models` dict 
 
 - `tests/server/` — the FastAPI test server (Python, owned by `uv`)
 - `tests/e2e/deterministic/*.spec.ts` — Playwright specs against `FunctionModel` fixtures (run on every PR)
+- `tests/e2e/offline/*.spec.ts` — Playwright specs against the built `offline/index.html`, run on every PR under `playwright.offline.config.ts` (not `E2E_TEST_DIR`) because they need `vite preview` serving the artifact rather than the dev server
 - `tests/e2e/llm/*.spec.ts` — live-provider Playwright specs (gated on `workflow_dispatch`)
 - `tests/e2e/{conversation,sidebar,tools}.ts` — shared spec helpers
 - `tests/headless/*.test.ts` — Vitest tests that exercise the wire protocol directly via `TestChat` (no browser)
