@@ -17,6 +17,7 @@ import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai
 import { EffortSelect } from '@/components/effort-select'
 import { EditMessageDialog } from '@/components/edit-message-dialog'
 import { HiddenToolsGroup } from '@/components/hidden-tools-group'
+import { McpConnectionsMenu, type McpConnection } from '@/components/mcp-connections-menu'
 import { ToolCallGroup } from '@/components/tool-call-group'
 import { ToolFiltersDialog } from '@/components/tool-filters-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -57,6 +58,7 @@ interface BuiltinTool {
 interface RemoteConfig {
   models: ModelConfig[]
   builtinTools: BuiltinTool[]
+  mcpConnections?: McpConnection[]
 }
 
 async function getModels() {
@@ -75,17 +77,25 @@ const ChatInner = () => {
     return stored && stored !== '' ? stored : 'medium'
   })
   const [enabledTools, setEnabledTools] = useState<string[]>([])
+  const [selectedMcpConnectionIds, setSelectedMcpConnectionIds] = useState<string[]>([])
   const modelRef = useRef(model)
   modelRef.current = model
   const effortRef = useRef(effort)
   effortRef.current = effort
   const enabledToolsRef = useRef(enabledTools)
   enabledToolsRef.current = enabledTools
+  const selectedMcpConnectionIdsRef = useRef(selectedMcpConnectionIds)
+  selectedMcpConnectionIdsRef.current = selectedMcpConnectionIds
 
   const [transport] = useState(
     () =>
       new DefaultChatTransport({
-        body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current, effort: effortRef.current }),
+        body: () => ({
+          model: modelRef.current,
+          builtinTools: enabledToolsRef.current,
+          effort: effortRef.current,
+          mcpConnections: selectedMcpConnectionIdsRef.current,
+        }),
       }),
   )
   const { messages, sendMessage, status, setMessages, regenerate, error, clearError, addToolApprovalResponse } =
@@ -114,6 +124,8 @@ const ChatInner = () => {
   useEffect(() => {
     if (configQuery.data) {
       setModel(configQuery.data.models[0].id)
+      const validConnectionIds = new Set(configQuery.data.mcpConnections?.map((connection) => connection.id))
+      setSelectedMcpConnectionIds((connectionIds) => connectionIds.filter((id) => validConnectionIds.has(id)))
     }
   }, [configQuery.data])
 
@@ -445,6 +457,13 @@ const ChatInner = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+              )}
+              {(configQuery.data?.mcpConnections?.length ?? 0) > 0 && (
+                <McpConnectionsMenu
+                  connections={configQuery.data?.mcpConnections ?? []}
+                  selectedConnectionIds={selectedMcpConnectionIds}
+                  onSelectedConnectionIdsChange={setSelectedMcpConnectionIds}
+                />
               )}
               {configQuery.data && model && (
                 <PromptInputModelSelect

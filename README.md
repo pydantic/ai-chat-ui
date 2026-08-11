@@ -10,6 +10,7 @@ Built with [Vercel AI SDK](https://sdk.vercel.ai/) and designed to work with Pyd
 - Tool call visualization with collapsible input/output
 - Conversation persistence via localStorage
 - Dynamic model and tool selection
+- Server-provided MCP connection selection (browser-to-BFF opaque IDs only)
 - Dark/light theme support
 - Mobile-responsive sidebar
 
