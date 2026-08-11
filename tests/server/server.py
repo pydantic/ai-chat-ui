@@ -220,6 +220,7 @@ models: dict[str, object] = {
 }
 
 SDK_VERSION: Literal[5, 6] = 6
+MCP_CONNECTION_IDS = frozenset({'test-mcp'})
 
 
 async def configure(request: Request) -> Response:
@@ -227,12 +228,22 @@ async def configure(request: Request) -> Response:
         {"id": f"function:function::{name}", "name": name, "builtinTools": []}
         for name in models
     ]
-    return JSONResponse({"models": model_list, "builtinTools": []})
+    return JSONResponse({
+        "models": model_list,
+        "builtinTools": [],
+        "mcpConnections": [{"id": "test-mcp", "name": "Test MCP"}],
+    })
 
 
 async def chat(request: Request) -> Response:
     adapter = await VercelAIAdapter.from_request(request, agent=agent, sdk_version=SDK_VERSION)
     extra = adapter.run_input.__pydantic_extra__ or {}
+    mcp_connections = extra.get('mcpConnections', [])
+    if not isinstance(mcp_connections, list) or not all(isinstance(connection_id, str) for connection_id in mcp_connections):
+        return JSONResponse({"error": "mcpConnections must be a list of connection IDs"}, status_code=400)
+    if unknown_connections := set(mcp_connections).difference(MCP_CONNECTION_IDS):
+        return JSONResponse({"error": f"Unknown MCP connection(s): {sorted(unknown_connections)}"}, status_code=400)
+
     model_id = extra.get("model")
     model_ref = models.get(model_id.split("::")[-1]) if model_id else None
     return await VercelAIAdapter.dispatch_request(
