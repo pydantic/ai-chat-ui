@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchConfig } from '../../src/lib/config'
+import { fetchConfig, normalizeDirectoryPath, resolveStartupConfig } from '../../src/lib/config'
 
 const respond = (body: unknown, init: { status?: number } = {}) => {
   const status = init.status ?? 200
@@ -20,6 +20,7 @@ describe('fetchConfig', () => {
     respond(config)
 
     await expect(fetchConfig()).resolves.toEqual(config)
+    expect(fetch).toHaveBeenCalledWith('/api/configure')
   })
 
   it('rejects an error response instead of storing it as configuration', async () => {
@@ -49,5 +50,43 @@ describe('fetchConfig', () => {
 
     respond({ models: [], builtinTools: ['web_search'] })
     await expect(fetchConfig()).rejects.toThrow(/models and builtin tools/)
+  })
+})
+
+describe('startup configuration', () => {
+  it('normalizes configured directories independently', () => {
+    expect(resolveStartupConfig({ basePath: '/demo', apiPath: 'services/chat' }, '/ignored/')).toEqual({
+      basePath: '/demo/',
+      apiPath: '/services/chat/',
+    })
+    expect(resolveStartupConfig({ basePath: '/demo' }, '/build/')).toEqual({
+      basePath: '/demo/',
+      apiPath: '/api/',
+    })
+    expect(resolveStartupConfig({ apiPath: '/demo/api' }, '/build/')).toEqual({
+      basePath: '/build/',
+      apiPath: '/demo/api/',
+    })
+  })
+
+  it('defaults to the normalized Vite base and root API directory', () => {
+    expect(resolveStartupConfig(undefined, '/docs')).toEqual({ basePath: '/docs/', apiPath: '/api/' })
+    expect(resolveStartupConfig(undefined, './')).toEqual({ basePath: '/', apiPath: '/api/' })
+    expect(resolveStartupConfig(undefined, 'https://cdn.example.com/package/')).toEqual({
+      basePath: '/',
+      apiPath: '/api/',
+    })
+  })
+
+  it('rejects origins, query strings, and fragments', () => {
+    expect(() => normalizeDirectoryPath('https://example.com/demo/', 'basePath')).toThrow(/same-origin path/)
+    expect(() => normalizeDirectoryPath('//example.com/demo/', 'basePath')).toThrow(/same-origin path/)
+    expect(() => normalizeDirectoryPath('/demo/?tenant=one', 'basePath')).toThrow(/query or fragment/)
+    expect(() => normalizeDirectoryPath('/demo/#chat', 'basePath')).toThrow(/query or fragment/)
+  })
+
+  it('rejects malformed startup configuration', () => {
+    expect(() => resolveStartupConfig('demo', '/')).toThrow(/must be an object/)
+    expect(() => resolveStartupConfig({ apiPath: 7 }, '/')).toThrow(/apiPath must be a string/)
   })
 })

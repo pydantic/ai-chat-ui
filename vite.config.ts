@@ -10,12 +10,19 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 // 8000 is quite common for backend, avoid the clash
 const BACKEND_DEV_SERVER_PORT = process.env.BACKEND_PORT ?? 38001
+const API_PROXY_PATH = process.env.API_PROXY_PATH ?? '/api'
 
-const API_PROXY = {
-  '/api': {
+function apiProxy(pathPrefix: string) {
+  return {
     target: `http://localhost:${BACKEND_DEV_SERVER_PORT}/`,
     changeOrigin: true,
-  },
+    rewrite: (path: string) => `/api${path.slice(pathPrefix.length)}`,
+  }
+}
+
+const API_PROXY = {
+  '/api': apiProxy('/api'),
+  ...(API_PROXY_PATH === '/api' ? {} : { [API_PROXY_PATH]: apiProxy(API_PROXY_PATH) }),
 }
 
 const FAVICON_MIME_TYPES: Record<string, string | undefined> = {

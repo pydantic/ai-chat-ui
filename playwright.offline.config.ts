@@ -18,6 +18,8 @@ process.env.no_proxy = process.env.NO_PROXY
 
 const TEST_SERVER_PORT = 38788
 const TEST_UI_PORT = 54322
+const TEST_BASE_PATH = '/demo/'
+const TEST_API_PATH = '/demo/api/'
 
 export default defineConfig({
   testDir: 'tests/e2e/offline',
@@ -36,7 +38,7 @@ export default defineConfig({
     },
   ],
   use: {
-    baseURL: `http://127.0.0.1:${TEST_UI_PORT}`,
+    baseURL: `http://127.0.0.1:${TEST_UI_PORT}${TEST_BASE_PATH}`,
     trace: 'retain-on-failure',
   },
   webServer: [
@@ -52,10 +54,11 @@ export default defineConfig({
       // command into the readiness wait.
       command:
         `BACKEND_PORT=${TEST_SERVER_PORT} ` +
+        `API_PROXY_PATH=${TEST_API_PATH.slice(0, -1)} ` +
         `pnpm exec vite preview --outDir offline --port ${TEST_UI_PORT} --host 127.0.0.1 --strictPort`,
-      // Probe the proxied API rather than `/`: the readiness fetch would otherwise pull the
-      // whole 15MB artifact, and this also confirms the /api proxy is wired up.
-      url: `http://127.0.0.1:${TEST_UI_PORT}/api/configure`,
+      // Probe the prefixed API rather than the UI: the readiness fetch would otherwise pull
+      // the whole 15MB artifact, and this also confirms the rewrite to /api is wired up.
+      url: `http://127.0.0.1:${TEST_UI_PORT}${TEST_API_PATH}configure`,
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },

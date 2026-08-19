@@ -34,7 +34,12 @@ export async function sendMessage(page: Page, model: string, message: string) {
   await input.press('Enter')
 }
 
-export async function waitForPersisted(page: Page, minMessages = 2, timeoutMs = 10_000) {
+export async function waitForPersisted(
+  page: Page,
+  minMessages = 2,
+  timeoutMs = 10_000,
+  conversationId = new URL(page.url()).pathname,
+) {
   // Messages are persisted to IndexedDB (db `chat-storage`, store `messages`)
   // throttled at 500ms (see src/lib/chat-db.ts). Poll inside the page until the
   // record has at least `minMessages` entries AND the last (assistant) message
@@ -46,7 +51,6 @@ export async function waitForPersisted(page: Page, minMessages = 2, timeoutMs = 
   // Implemented as a single page.evaluate with a JS poll loop rather than
   // page.waitForFunction(): the latter does not reliably re-evaluate a
   // Promise-returning callback that opens IDB on each iteration.
-  const conversationId = new URL(page.url()).pathname
   await page.evaluate(
     async ({ id, min, timeout }) => {
       /* global indexedDB */

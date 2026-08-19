@@ -29,7 +29,7 @@ import { Part } from './Part'
 import type { ThinkingEffort } from '@/lib/generated/thinking-effort.gen'
 import type { ConversationEntry } from './types'
 import { readEffort, writeEffort } from '@/lib/effort'
-import { fetchConfig } from '@/lib/config'
+import { fetchConfig, startupConfig } from '@/lib/config'
 import { resolveSelectedModel } from '@/lib/models'
 import { toolNameOfPart } from '@/lib/tool-filters'
 import { COMPLETE_TOOL_STATES, groupParts, type PartRun } from '@/lib/tool-grouping'
@@ -61,6 +61,7 @@ const ChatInner = () => {
   const [transport] = useState(
     () =>
       new DefaultChatTransport({
+        api: `${startupConfig.apiPath}chat`,
         body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current, effort: effortRef.current }),
       }),
   )

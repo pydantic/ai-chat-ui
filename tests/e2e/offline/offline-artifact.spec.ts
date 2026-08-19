@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { sendMessage } from '../conversation'
+import { sendMessage, waitForPersisted } from '../conversation'
+
+const BASE_PATH = '/demo/'
+const API_PATH = '/demo/api/'
 
 // The bug (pydantic-ai#5318): the CDN build bakes an absolute jsdelivr base into
 // index.html *and* into the runtime chunk loader, so a self-hosted copy silently reaches
@@ -24,12 +27,32 @@ async function blockExternalRequests(page: Page): Promise<string[]> {
   return attempted
 }
 
-test.describe('offline artifact', () => {
-  test('renders code blocks and math with no external requests', async ({ page }) => {
-    const attempted = await blockExternalRequests(page)
+async function configurePage(page: Page, apiPath: string): Promise<void> {
+  await page.addInitScript(
+    ({ basePath, apiPath }) => {
+      window.PYDANTIC_AI_CHAT_CONFIG = { basePath, apiPath }
+    },
+    { basePath: BASE_PATH, apiPath },
+  )
+}
 
-    await page.goto('/')
+test.describe('offline artifact', () => {
+  test('works below a configured prefix with no external requests', async ({ page }) => {
+    await configurePage(page, API_PATH)
+    const attempted = await blockExternalRequests(page)
+    const configureRequest = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === `${API_PATH}configure`,
+    )
+
+    await page.goto(BASE_PATH)
+    await configureRequest
+
+    const chatRequest = page.waitForRequest((request) => new URL(request.url()).pathname === `${API_PATH}chat`)
     await sendMessage(page, 'markdown', 'Show me markdown')
+    await chatRequest
+
+    const conversationPath = new URL(page.url()).pathname
+    expect(conversationPath).toMatch(/^\/demo\/[\w-]+$/)
 
     // A fenced code block resolves a shiki language grammar through a dynamic import. In
     // the CDN build that import is fetched from jsdelivr at runtime; here it must already
@@ -41,7 +64,37 @@ test.describe('offline artifact', () => {
     // markdown would still read `$$`.
     await expect(page.getByText('E=mc2').first()).toBeVisible()
 
+    const conversationId = conversationPath.slice('/demo'.length)
+    await waitForPersisted(page, 2, 10_000, conversationId)
+
+    const conversationLink = page.getByRole('link', { name: /Show me markdown/ })
+    await expect(conversationLink).toHaveAttribute('href', conversationPath)
+    await page.getByRole('link', { name: 'New conversation' }).click()
+    await expect(page).toHaveURL(new RegExp(`${BASE_PATH}$`))
+    await conversationLink.click()
+    await expect(page).toHaveURL(new RegExp(`${conversationPath}$`))
+
+    await page.reload()
+    await expect(page.getByText('def greet():')).toBeVisible()
+
     // The real assertion for the fonts: anything still living on the CDN shows up here.
+    expect(attempted).toEqual([])
+  })
+
+  test('keeps the API directory independent from the navigation prefix', async ({ page }) => {
+    await configurePage(page, '/api/')
+    const attempted = await blockExternalRequests(page)
+    const configureRequest = page.waitForRequest((request) => new URL(request.url()).pathname === '/api/configure')
+
+    await page.goto(BASE_PATH)
+    await configureRequest
+
+    const chatRequest = page.waitForRequest((request) => new URL(request.url()).pathname === '/api/chat')
+    await sendMessage(page, 'text', 'Hello')
+    await chatRequest
+
+    await expect(page).toHaveURL(/^http:\/\/127\.0\.0\.1:\d+\/demo\/[\w-]+$/)
+    await expect(page.getByText('Hello from the test server')).toBeVisible()
     expect(attempted).toEqual([])
   })
 })

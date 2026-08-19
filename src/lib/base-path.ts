@@ -1,5 +1,6 @@
-const RAW = import.meta.env.BASE_URL
-const BASE = RAW.startsWith('http') ? '/' : RAW.endsWith('/') ? RAW : RAW + '/'
+import { startupConfig } from '@/lib/config'
+
+const BASE = startupConfig.basePath
 
 export function stripBasePath(pathname: string): string {
   if (BASE === '/') return pathname

@@ -84,7 +84,7 @@ The shell is composed as sidebar → `AppHeader` → conversation → `ChatCompo
 
 **Model & Tool Selection:**
 
-- Dynamic model/tool configuration fetched from `/api/configure`
+- Dynamic model/tool configuration fetched from the configured API path (`/api/configure` by default)
 - Models and available builtin tools configured per-model
 - Tools toggled via checkboxes in prompt toolbar
 
@@ -103,12 +103,18 @@ The shell is composed as sidebar → `AppHeader` → conversation → `ChatCompo
 
 ### Backend Integration
 
-**Endpoints:**
+**Default endpoints:**
 
 - `GET /api/configure`: Returns available models and builtin tools (camelCase)
 - `POST /api/chat`: Handles chat messages via `VercelAIAdapter`
   - Accepts `model` and `builtinTools` in request body extra data
   - Streams responses using SSE
+
+Set `window.PYDANTIC_AI_CHAT_CONFIG` before the UI module executes to override paths at runtime.
+
+- Use `basePath` to control conversation navigation.
+- Use `apiPath` as the complete same-origin directory containing `configure` and `chat`.
+- Keep `apiPath` independent of `basePath`; its default is `/api/`.
 
 **Token usage:**
 
@@ -150,7 +156,8 @@ Two normalizations are part of vendoring itself, not local modifications: files 
 
 - **TypeScript paths**: `@/*` maps to `./src/*`
 - **Vite base URL**: CDN path for production (`jsdelivr.net/npm/@pydantic/pydantic-ai-chat/dist/`)
-- **Dev proxy**: `/api` proxied to `localhost:8000`
+- **Runtime paths**: `window.PYDANTIC_AI_CHAT_CONFIG` supplies independent `basePath` and `apiPath` values
+- **Dev proxy**: `/api` proxied to `localhost:38001`
 - **Package**: Published as `@pydantic/pydantic-ai-chat` (public npm package)
 
 ## Tech Stack
