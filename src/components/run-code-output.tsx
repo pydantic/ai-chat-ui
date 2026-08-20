@@ -1,17 +1,11 @@
 import { ToolOutputCode } from '@/components/tool-output-code'
-import type { ToolPart } from '@/components/ai-elements/tool'
+import { type RunCodeResult } from '@/lib/run-code-payload'
 
-export interface RunCodeResult {
-  output?: unknown
-  result?: unknown
-}
+export { isRunCodeOutput } from '@/lib/run-code-payload'
+export type { RunCodeResult } from '@/lib/run-code-payload'
 
 interface RunCodeOutputProps {
   output: RunCodeResult
-}
-
-export function isRunCodeOutput(output: ToolPart['output']): output is RunCodeResult {
-  return typeof output === 'object' && output !== null && ('output' in output || 'result' in output)
 }
 
 export function RunCodeOutput({ output }: RunCodeOutputProps) {

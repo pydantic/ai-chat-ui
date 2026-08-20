@@ -15,8 +15,12 @@ afterEach(() => {
 })
 
 describe('fetchConfig', () => {
-  it('returns the configuration', async () => {
-    const config = { models: [{ id: 'a', name: 'a', builtinTools: [] }], builtinTools: [] }
+  it('returns the configuration with unknown fields intact', async () => {
+    const config = {
+      models: [{ id: 'a', name: 'a', builtinTools: [], provider: 'test-provider' }],
+      builtinTools: [{ id: 'web_search', name: 'Web search', category: 'search' }],
+      defaultModel: 'a',
+    }
     respond(config)
 
     await expect(fetchConfig()).resolves.toEqual(config)
@@ -36,6 +40,21 @@ describe('fetchConfig', () => {
     respond({ detail: 'something else entirely' })
 
     await expect(fetchConfig()).rejects.toThrow(/models and builtin tools/)
+  })
+
+  it('keeps JSON parse errors intact', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.reject(new SyntaxError('Unexpected token <')),
+        }),
+      ),
+    )
+
+    await expect(fetchConfig()).rejects.toThrow(SyntaxError)
   })
 
   it('rejects arrays of the wrong shape', async () => {
@@ -86,7 +105,10 @@ describe('startup configuration', () => {
   })
 
   it('rejects malformed startup configuration', () => {
-    expect(() => resolveStartupConfig('demo', '/')).toThrow(/must be an object/)
-    expect(() => resolveStartupConfig({ apiPath: 7 }, '/')).toThrow(/apiPath must be a string/)
+    expect(() => resolveStartupConfig('demo', '/')).toThrow(new TypeError('PYDANTIC_AI_CHAT_CONFIG must be an object'))
+    expect(() => resolveStartupConfig([], '/')).toThrow(new TypeError('PYDANTIC_AI_CHAT_CONFIG must be an object'))
+    expect(() => resolveStartupConfig({ apiPath: 7 }, '/')).toThrow(
+      new TypeError('PYDANTIC_AI_CHAT_CONFIG.apiPath must be a string'),
+    )
   })
 })

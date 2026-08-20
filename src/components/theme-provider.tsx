@@ -1,7 +1,9 @@
 import * as React from 'react'
 import { createContext, useContext, useEffect, useState } from 'react'
+import { z } from 'zod'
 
-type Theme = 'dark' | 'light' | 'system'
+const themeSchema = z.enum(['dark', 'light', 'system'])
+type Theme = z.infer<typeof themeSchema>
 
 interface ThemeProviderProps {
   children: React.ReactNode
@@ -21,14 +23,19 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
+export function resolveStoredTheme(stored: string | null, defaultTheme: Theme): Theme {
+  const result = themeSchema.safeParse(stored)
+  return result.success ? result.data : defaultTheme
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
   storageKey = 'vite-ui-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (window.localStorage.getItem(storageKey) as Theme | undefined) ?? defaultTheme,
+  const [theme, setTheme] = useState<Theme>(() =>
+    resolveStoredTheme(window.localStorage.getItem(storageKey), defaultTheme),
   )
 
   useEffect(() => {

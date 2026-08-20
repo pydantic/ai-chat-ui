@@ -1,5 +1,7 @@
 import { AbstractChat, DefaultChatTransport, type ChatState, type ChatStatus, type UIMessage } from 'ai'
 
+import { parseRemoteConfig, type RemoteConfig } from '../src/lib/config'
+
 class SimpleChatState implements ChatState<UIMessage> {
   status: ChatStatus = 'ready'
   error: Error | undefined = undefined
@@ -38,26 +40,15 @@ export function getServerPort(): number {
   return Number(port)
 }
 
-interface ModelConfig {
-  id: string
-  name: string
-  builtinTools: string[]
-}
+let cachedConfig: RemoteConfig | undefined
 
-interface ServerConfig {
-  models: ModelConfig[]
-  builtinTools: { name: string; id: string }[]
-}
-
-let cachedConfig: ServerConfig | undefined
-
-async function fetchConfig(port: number): Promise<ServerConfig> {
+async function fetchConfig(port: number): Promise<RemoteConfig> {
   if (cachedConfig) return cachedConfig
   const res = await fetch(`http://127.0.0.1:${port}/api/configure`)
   if (!res.ok) {
     throw new Error(`/api/configure returned ${res.status}`)
   }
-  cachedConfig = (await res.json()) as ServerConfig
+  cachedConfig = parseRemoteConfig(await res.json())
   return cachedConfig
 }
 

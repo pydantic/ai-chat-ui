@@ -1,4 +1,7 @@
+import { z } from 'zod'
+
 const STORAGE_KEY = 'toolFilters'
+const filtersSchema = z.array(z.string())
 
 /**
  * The minimal shape needed to identify a tool part and read its name. A real
@@ -55,10 +58,8 @@ export function loadFilters(defaults: string[]): string[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw === null) return defaults
     const parsed: unknown = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.every((entry) => typeof entry === 'string')) {
-      return parsed
-    }
-    return defaults
+    const result = filtersSchema.safeParse(parsed)
+    return result.success ? result.data : defaults
   } catch {
     return defaults
   }

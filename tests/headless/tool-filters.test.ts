@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { filterMatches, isToolFiltered, toolNameOfPart } from '../../src/lib/tool-filters'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { filterMatches, isToolFiltered, loadFilters, toolNameOfPart } from '../../src/lib/tool-filters'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('filterMatches', () => {
   it('matches exact names', () => {
@@ -75,5 +79,25 @@ describe('toolNameOfPart', () => {
   it('returns null for a non-tool part', () => {
     expect(toolNameOfPart({ type: 'text' })).toBe(null)
     expect(toolNameOfPart({ type: 'reasoning' })).toBe(null)
+  })
+})
+
+describe('loadFilters', () => {
+  const defaults = ['set_*']
+
+  it('falls back to defaults for malformed JSON or values outside the string-array schema', () => {
+    vi.stubGlobal('localStorage', { getItem: () => '{' })
+    expect(loadFilters(defaults)).toBe(defaults)
+
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(['set_*', 3]) })
+    expect(loadFilters(defaults)).toBe(defaults)
+  })
+
+  it('retains valid stored arrays, including an empty one', () => {
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(['read_*']) })
+    expect(loadFilters(defaults)).toEqual(['read_*'])
+
+    vi.stubGlobal('localStorage', { getItem: () => '[]' })
+    expect(loadFilters(defaults)).toEqual([])
   })
 })

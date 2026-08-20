@@ -1,6 +1,7 @@
 import { CodeBlock, CodeBlockCopyButton } from '@/components/ai-elements/code-block'
 import { Badge } from '@/components/ui/badge'
 import type { ToolPart } from '@/components/ai-elements/tool'
+import { parseRunCodeInput } from '@/lib/run-code-payload'
 import { memo } from 'react'
 
 // Memoize to avoid re-running highlighters on unchanged code.
@@ -10,15 +11,8 @@ interface RunCodeInputProps {
   input: ToolPart['input']
 }
 
-interface RunCodeFields {
-  code?: unknown
-  restart?: unknown
-}
-
 export function RunCodeInput({ input }: RunCodeInputProps) {
-  const fields = (input ?? {}) as RunCodeFields
-  const code = typeof fields.code === 'string' ? fields.code : ''
-  const restart = fields.restart === true
+  const { code, restart } = parseRunCodeInput(input)
 
   return (
     <div className="space-y-2 overflow-hidden p-4">
