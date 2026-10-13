@@ -1,27 +1,44 @@
 import { test, expect } from '@playwright/test'
-import { chat, sendMessage, waitForPersisted } from '../conversation'
+import { chat, requestBody, sendMessage, waitForPersisted } from '../conversation'
 import { conversationAction, sidebar } from '../sidebar'
 
 test.describe('conversation lifecycle', () => {
   test('messages persist across page reload', async ({ page }) => {
     await page.goto('/')
+    const firstRequestPromise = page.waitForRequest('**/api/chat')
     await sendMessage(page, 'text', 'Persist test')
+    const firstRequest = await firstRequestPromise
+    const conversationId = new URL(page.url()).pathname
+    const firstBody = requestBody(firstRequest)
     await expect(chat(page).getByText('Hello from the test server')).toBeVisible()
     await waitForPersisted(page)
 
     await page.reload()
     await expect(chat(page).getByText('Persist test')).toBeVisible()
     await expect(chat(page).getByText('Hello from the test server')).toBeVisible()
+
+    const resumedRequestPromise = page.waitForRequest('**/api/chat')
+    await sendMessage(page, 'text', 'After reload')
+    const resumedBody = requestBody(await resumedRequestPromise)
+    expect(firstBody.id).toBe(conversationId)
+    expect(resumedBody.id).toBe(conversationId)
+    expect(JSON.stringify(resumedBody.messages)).toContain('Persist test')
   })
 
   test('switching conversations preserves messages', async ({ page }) => {
     await page.goto('/')
+    const firstRequestPromise = page.waitForRequest('**/api/chat')
     await sendMessage(page, 'text', 'First conversation')
+    const firstBody = requestBody(await firstRequestPromise)
+    const firstConversationId = new URL(page.url()).pathname
     await expect(chat(page).getByText('Hello from the test server')).toBeVisible()
     await waitForPersisted(page)
 
     await sidebar(page).getByRole('link', { name: 'New conversation' }).click()
+    const secondRequestPromise = page.waitForRequest('**/api/chat')
     await sendMessage(page, 'text', 'Second conversation')
+    const secondBody = requestBody(await secondRequestPromise)
+    const secondConversationId = new URL(page.url()).pathname
     await expect(chat(page).getByText('Hello from the test server')).toBeVisible()
     await waitForPersisted(page)
 
@@ -31,6 +48,15 @@ test.describe('conversation lifecycle', () => {
     await sidebar(page).getByText('First conversation').click()
     await expect(chat(page).getByText('First conversation')).toBeVisible()
     await expect(chat(page).getByText('Hello from the test server')).toBeVisible()
+
+    const reopenedRequestPromise = page.waitForRequest('**/api/chat')
+    await sendMessage(page, 'text', 'Back in the first conversation')
+    const reopenedBody = requestBody(await reopenedRequestPromise)
+    expect(firstBody.id).toBe(firstConversationId)
+    expect(secondBody.id).toBe(secondConversationId)
+    expect(secondConversationId).not.toBe(firstConversationId)
+    expect(reopenedBody.id).toBe(firstConversationId)
+    expect(JSON.stringify(reopenedBody.messages)).toContain('First conversation')
   })
 
   test('deleting active conversation navigates home', async ({ page }) => {

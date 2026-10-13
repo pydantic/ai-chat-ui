@@ -65,15 +65,17 @@ const ChatInner = () => {
         body: () => ({ model: modelRef.current, builtinTools: enabledToolsRef.current, effort: effortRef.current }),
       }),
   )
+  const [conversationId, setConversationId] = useConversationIdFromUrl()
   // The session is owned here rather than left to `useChat` for two reasons:
   // the array it stores is only readable back off the session itself, and an
   // abandoned run can only be cut loose by handing the hook a different one.
-  const createSession = () =>
+  const createSession = (routeId: string) =>
     new ChatSession<UIMessage>({
+      id: routeId === '/' ? `/${nanoid()}` : routeId,
       transport,
       sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     })
-  const [session, setSession] = useState(createSession)
+  const [session, setSession] = useState(() => createSession(conversationId))
   // Every message write goes through this, never through a session captured by
   // a render: the conversation-change effect can swap sessions and then install
   // a history from a read that lands before React has re-rendered.
@@ -82,8 +84,8 @@ const ChatInner = () => {
   const { messages, sendMessage, status, regenerate, error, clearError, addToolApprovalResponse, stop } = useChat({
     chat: session,
   })
-  const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const sessionRouteRef = useRef(conversationId)
 
   // Set when a send creates a conversation, so the id change it triggers is not
   // mistaken for navigating away from one.
@@ -192,6 +194,7 @@ const ChatInner = () => {
     // stop applies.
     if (createdHereRef.current === conversationId) {
       createdHereRef.current = null
+      sessionRouteRef.current = conversationId
       setLoadedConversationId(conversationId)
       return
     }
@@ -216,14 +219,18 @@ const ChatInner = () => {
     // they go on landing in an object nothing renders, persists or sends.
     // Emptying it first also keeps its auto-send predicate from firing a
     // request of its own once the run tears down.
-    let session = sessionRef.current
-    if (session.status === 'streaming' || session.status === 'submitted') {
-      void session.stop()
-      session.messages = []
-      session = createSession()
-      sessionRef.current = session
-      setSession(session)
+    if (sessionRouteRef.current !== conversationId) {
+      const retiringSession = sessionRef.current
+      if (retiringSession.status === 'streaming' || retiringSession.status === 'submitted') {
+        void retiringSession.stop()
+        retiringSession.messages = []
+      }
+      const nextSession = createSession(conversationId)
+      sessionRouteRef.current = conversationId
+      sessionRef.current = nextSession
+      setSession(nextSession)
     }
+    const session = sessionRef.current
 
     // Flush before clearing. `useThrottle` cancels its pending write whenever
     // the value changes, and the clear below changes it — so leaving within
@@ -310,7 +317,7 @@ const ChatInner = () => {
 
     // we're starting a new conversation
     if (stripBasePath(window.location.pathname) === '/') {
-      const newConversationId = `/${nanoid()}`
+      const newConversationId = sessionRef.current.id
       createdHereRef.current = newConversationId
       // `setConversationId` pushes the URL itself; pushing again here left two
       // identical history entries, so Back appeared to do nothing.
