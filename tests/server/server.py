@@ -250,6 +250,10 @@ async def stream_interleaved(
     if not returns:
         yield {0: DeltaToolCall(name="get_weather", json_args=json.dumps({"city": "Cairo"}))}
     elif len(returns) == 1:
+        # A real model takes a while to answer a tool result. Without that gap the
+        # prose can land in the same render as the first round, so the first block
+        # is never live and has no duration to report.
+        await asyncio.sleep(0.6)
         yield "Checked the weather. Now the sums:"
         yield {0: DeltaToolCall(name="calculate", json_args=json.dumps({"expression": "6 * 7"}))}
     else:
