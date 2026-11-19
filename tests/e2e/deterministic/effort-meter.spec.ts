@@ -11,9 +11,10 @@ test.describe('effort meter', () => {
     await expect(page.getByRole('radio', { name: /Medium/ })).toBeVisible()
     await expect(page.getByRole('radio', { name: /High/, exact: false }).first()).toBeVisible()
     await expect(page.getByRole('radio', { name: /X-High/ })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /Max/ })).toBeVisible()
 
     // The level is described, not just named.
-    await expect(page.getByText('Take as long as it needs')).toBeVisible()
+    await expect(page.getByText('Think it through at length')).toBeVisible()
   })
 
   test('selected effort level is sent in the request body', async ({ page }) => {
