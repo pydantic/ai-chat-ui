@@ -2,10 +2,10 @@ import { THINKING_EFFORT_LEVELS } from '@/lib/generated/thinking-effort.gen'
 import { cn } from '@/lib/utils'
 
 // One height per level; a caller cannot pass a count this cannot draw.
-const HEIGHTS = ['h-1.5', 'h-2', 'h-2.5', 'h-3', 'h-3.5']
+const HEIGHTS = ['h-1.5', 'h-2', 'h-2.5', 'h-3', 'h-3.5', 'h-4']
 
 /**
- * Signal-strength glyph for a thinking-effort level: five rising bars, lit up
+ * Signal-strength glyph for a thinking-effort level: one rising bar per level, lit up
  * to the chosen one. It turns an abstract setting into something you read at a
  * glance and watch respond when you change it.
  */

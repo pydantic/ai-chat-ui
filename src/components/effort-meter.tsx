@@ -15,6 +15,7 @@ const EFFORT_LABELS: Record<ThinkingEffort, string> = {
   medium: 'Medium',
   high: 'High',
   xhigh: 'X-High',
+  max: 'Max',
 }
 
 const EFFORT_DESCRIPTIONS: Record<ThinkingEffort, string> = {
@@ -23,6 +24,7 @@ const EFFORT_DESCRIPTIONS: Record<ThinkingEffort, string> = {
   medium: 'Balanced — the default',
   high: 'Work the problem through',
   xhigh: 'Take as long as it needs',
+  max: 'The deepest thinking the model allows',
 }
 
 interface EffortMeterProps {
@@ -33,7 +35,7 @@ interface EffortMeterProps {
 /**
  * How hard the agent should think, as a meter instead of a dropdown.
  *
- * Effort is an intensity, and a select box renders it as five interchangeable
+ * Effort is an intensity, and a select box renders it as interchangeable
  * strings. The bars show where the current setting sits in the range before the
  * control is even opened, and animate when it moves.
  */

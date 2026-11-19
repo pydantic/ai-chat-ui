@@ -61,12 +61,22 @@ def large_output() -> dict[str, object]:
     return {"summary": "large_result_marker", "payload": "x" * 22000}
 
 
+def _is_retry(part: object) -> bool:
+    # Newer pydantic-ai records a tool's ModelRetry as ToolReturnPart(outcome="retried"). Releases
+    # without that outcome, such as the one uv.lock resolves for Python 3.10, use RetryPromptPart.
+    return isinstance(part, RetryPromptPart) or (
+        isinstance(part, ToolReturnPart) and part.outcome == "retried"
+    )
+
+
 def _has_tool_return(messages: list[ModelMessage]) -> bool:
-    return any(isinstance(p, ToolReturnPart) for msg in messages for p in msg.parts)
+    return any(
+        isinstance(p, ToolReturnPart) and not _is_retry(p) for msg in messages for p in msg.parts
+    )
 
 
 def _has_retry_prompt(messages: list[ModelMessage]) -> bool:
-    return any(isinstance(p, RetryPromptPart) for msg in messages for p in msg.parts)
+    return any(_is_retry(p) for msg in messages for p in msg.parts)
 
 
 def _first_tool_return_content(messages: list[ModelMessage]) -> str:

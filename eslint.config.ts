@@ -60,6 +60,14 @@ export default defineConfig(
     },
   },
   {
+    // Vendored AI Elements are read-only and track upstream, which can lag behind
+    // `ai` deprecations (e.g. `Experimental_GeneratedImage`). Surface those without failing lint.
+    files: ['src/components/ai-elements/**'],
+    rules: {
+      '@typescript-eslint/no-deprecated': 'warn',
+    },
+  },
+  {
     languageOptions: {
       parserOptions: {
         projectService: true,

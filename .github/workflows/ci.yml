@@ -56,7 +56,7 @@ jobs:
     # for ~1h on the hosted runner's network). The tag is pinned to the
     # project's Playwright version so the bundled browser matches.
     container:
-      image: mcr.microsoft.com/playwright:v1.59.1-jammy
+      image: mcr.microsoft.com/playwright:v1.65.1-jammy
     steps:
       - name: Checkout
         uses: actions/checkout@v6
