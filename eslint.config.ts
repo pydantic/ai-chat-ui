@@ -62,7 +62,12 @@ export default defineConfig(
   {
     // Vendored AI Elements are read-only and track upstream, which can lag behind
     // `ai` deprecations (e.g. `Experimental_GeneratedImage`). Surface those without failing lint.
+    // Unused disable directives go unreported: they are fixable, so lint-staged's
+    // `eslint --fix` would strip them from vendored files.
     files: ['src/components/ai-elements/**'],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
+    },
     rules: {
       '@typescript-eslint/no-deprecated': 'warn',
     },

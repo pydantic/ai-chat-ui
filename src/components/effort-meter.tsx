@@ -23,7 +23,7 @@ const EFFORT_DESCRIPTIONS: Record<ThinkingEffort, string> = {
   low: 'A quick think first',
   medium: 'Balanced — the default',
   high: 'Work the problem through',
-  xhigh: 'Take as long as it needs',
+  xhigh: 'Think it through at length',
   max: 'The deepest thinking the model allows',
 }
 

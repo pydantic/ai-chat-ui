@@ -75,6 +75,10 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
+        with:
+          # The Playwright image's system Python is 3.10, for which
+          # tests/server/uv.lock resolves an older pydantic-ai than the CI job tests.
+          python-version: "3.14"
 
       - name: Run deterministic E2E tests
         run: pnpm run test:e2e
