@@ -1,3 +1,10 @@
+## [2.3.2](https://github.com/pydantic/ai-chat-ui/compare/v2.3.1...v2.3.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** patch Vite GHSA-p4f5-76q4-ffq7 and update all dependencies ([#54](https://github.com/pydantic/ai-chat-ui/issues/54)) ([0b6cb0a](https://github.com/pydantic/ai-chat-ui/commit/0b6cb0a2851e5cc42f74e3291c6f5007df2172bd))
+
 ## [2.3.1](https://github.com/pydantic/ai-chat-ui/compare/v2.3.0...v2.3.1) (2026-10-13)
 
 
