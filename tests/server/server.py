@@ -61,12 +61,22 @@ def large_output() -> dict[str, object]:
     return {"summary": "large_result_marker", "payload": "x" * 22000}
 
 
+def _is_retry(part: object) -> bool:
+    # Newer pydantic-ai records a tool's ModelRetry as ToolReturnPart(outcome="retried"). Releases
+    # without that outcome, such as the one uv.lock resolves for Python 3.10, use RetryPromptPart.
+    return isinstance(part, RetryPromptPart) or (
+        isinstance(part, ToolReturnPart) and part.outcome == "retried"
+    )
+
+
 def _has_tool_return(messages: list[ModelMessage]) -> bool:
-    return any(isinstance(p, ToolReturnPart) for msg in messages for p in msg.parts)
+    return any(
+        isinstance(p, ToolReturnPart) and not _is_retry(p) for msg in messages for p in msg.parts
+    )
 
 
 def _has_retry_prompt(messages: list[ModelMessage]) -> bool:
-    return any(isinstance(p, RetryPromptPart) for msg in messages for p in msg.parts)
+    return any(_is_retry(p) for msg in messages for p in msg.parts)
 
 
 def _first_tool_return_content(messages: list[ModelMessage]) -> str:
@@ -240,6 +250,10 @@ async def stream_interleaved(
     if not returns:
         yield {0: DeltaToolCall(name="get_weather", json_args=json.dumps({"city": "Cairo"}))}
     elif len(returns) == 1:
+        # A real model takes a while to answer a tool result. Without that gap the
+        # prose can land in the same render as the first round, so the first block
+        # is never live and has no duration to report.
+        await asyncio.sleep(0.6)
         yield "Checked the weather. Now the sums:"
         yield {0: DeltaToolCall(name="calculate", json_args=json.dumps({"expression": "6 * 7"}))}
     else:
